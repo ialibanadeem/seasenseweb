@@ -1,0 +1,28 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [uuidOssp(map: "uuid-ossp")]
+}
+
+model GpsLog {
+  id           String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  mmsi         String
+  utc_datetime DateTime
+  latitude     Float
+  longitude    Float
+  altitude_m   Float?
+  speed_kmh    Float?
+  heading_deg  Float?
+  satellites   Int?
+  hdop         Float?
+  fix_status   Int?
+  prns         Int[]
+  snrs         Float[]
+
+  @@index([mmsi])
+  @@index([utc_datetime])
+}

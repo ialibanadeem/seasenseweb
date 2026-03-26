@@ -5,15 +5,31 @@ import Link from 'next/link';
 import { Search, Bell, Settings, User, Activity } from 'lucide-react';
 import { useTrackingSocket } from '../../hooks/useTrackingSocket';
 import { useUserStore } from '../../store/useUserStore';
+import { useVesselStore } from '../../store/useVesselStore';
 
 export const TopNavigationBar = () => {
     const { isConnected } = useTrackingSocket();
     const { profile, fetchProfile } = useUserStore();
+    const [isHardwareActive, setIsHardwareActive] = React.useState(false);
 
     // Fetch the user session on initial dashboard load
     useEffect(() => {
         fetchProfile();
     }, [fetchProfile]);
+
+    // Hardware active ping threshold (Relaxed to 5 full minutes to gracefully handle packet loss)
+    useEffect(() => {
+        const pingCheck = setInterval(() => {
+            const hardware = useVesselStore.getState().livePositions['ESP32-HARDWARE'];
+            if (hardware && hardware.lastSeen) {
+                const ageMs = Date.now() - new Date(hardware.lastSeen).getTime();
+                setIsHardwareActive(ageMs <= 300000); // 300 seconds (5 minutes)
+            } else {
+                setIsHardwareActive(false);
+            }
+        }, 2000);
+        return () => clearInterval(pingCheck);
+    }, []);
 
     const firstName = profile?.firstName || 'Admin';
     const lastName = profile?.lastName || 'User';
@@ -39,11 +55,27 @@ export const TopNavigationBar = () => {
                 </div>
 
                 {/* Right side controls */}
-                <div className="flex items-center gap-5">
+                <div className="flex items-center gap-4">
 
+                    {/* Hardware ESP32 Status */}
+                    <div className={`flex items-center gap-2 px-3 h-9 rounded-lg border transition-colors ${isHardwareActive ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200'}`} title="Hardware GPS Fix Status">
+                        <div className="relative flex h-2 w-2">
+                            {isHardwareActive ? (
+                                <>
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                                </>
+                            ) : (
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-slate-400"></span>
+                            )}
+                        </div>
+                        <span className={`text-[12px] font-bold ${isHardwareActive ? 'text-amber-600' : 'text-slate-500'}`}>
+                            {isHardwareActive ? 'Hardware Live' : 'Hardware Idle'}
+                        </span>
+                    </div>
 
-                    {/* System Status */}
-                    <div className="flex items-center gap-2 px-3 h-9 rounded-lg bg-slate-50 border border-slate-100" title="System Status">
+                    {/* Server WebSockets System Status */}
+                    <div className="flex items-center gap-2 px-3 h-9 rounded-lg bg-slate-50 border border-slate-100" title="Server Status">
                         <div className="relative flex h-2 w-2">
                             {isConnected ? (
                                 <>
@@ -55,7 +87,7 @@ export const TopNavigationBar = () => {
                             )}
                         </div>
                         <span className={`text-[12px] font-bold ${isConnected ? 'text-emerald-600' : 'text-rose-600'}`}>
-                            {isConnected ? 'Online' : 'Offline'}
+                            {isConnected ? 'Server Sync' : 'Server Offline'}
                         </span>
                     </div>
 

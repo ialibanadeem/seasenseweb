@@ -5,34 +5,39 @@ import { useRouter } from 'next/navigation';
 import { Route, Search, Filter, Download, ArrowRight, MapPin, Clock, Ship } from 'lucide-react';
 
 export default function TripHistoryPage() {
-    const mockTrips = [
-        { id: 'TRP-8091', vessel: 'Al-Mehran', distance: '12.5 nm', duration: '2h 20m', start: 'Karachi Port', end: 'Port Qasim', date: 'Oct 24, 2023', status: 'Completed' },
-        { id: 'TRP-8092', vessel: 'Sindhbad Explorer', distance: '5.0 nm', duration: '1h 15m', start: 'Kemari', end: 'Manora Island', date: 'Oct 23, 2023', status: 'Completed' },
-        { id: 'TRP-8093', vessel: 'Gwadar Pearl', distance: '22.5 nm', duration: '3h 45m', start: 'Gadani', end: 'Churna Island', date: 'Oct 22, 2023', status: 'Completed' },
-        { id: 'TRP-8094', vessel: 'Shahbaz Tracker', distance: '145.8 nm', duration: '15h 10m', start: 'Karachi Port', end: 'Ormara Base', date: 'Oct 21, 2023', status: 'Completed' },
-        { id: 'TRP-8095', vessel: 'Bolan Transporter', distance: '280.0 nm', duration: '30h 00m', start: 'Port Qasim', end: 'Gwadar Port', date: 'Oct 20, 2023', status: 'Completed' },
-        { id: 'TRP-8096', vessel: 'Al-Mehran', distance: '12.4 nm', duration: '2h 30m', start: 'Port Qasim', end: 'Karachi Port', date: 'Oct 19, 2023', status: 'Completed' },
-        { id: 'TRP-8097', vessel: 'Sindhbad Explorer', distance: '5.2 nm', duration: '1h 45m', start: 'Manora Island', end: 'Kemari', date: 'Oct 18, 2023', status: 'Completed' },
-        { id: 'TRP-8098', vessel: 'Gwadar Pearl', distance: '280.9 nm', duration: '28h 20m', start: 'Gwadar Port', end: 'Karachi Port', date: 'Oct 17, 2023', status: 'Completed' },
-    ];
-
+    const [trips, setTrips] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState('');
 
+    React.useEffect(() => {
+        const fetchTrips = async () => {
+            try {
+                const response = await fetch('http://localhost:3005/trips');
+                const data = await response.json();
+                setTrips(data);
+            } catch (err) {
+                console.error("Failed to fetch trips:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchTrips();
+    }, []);
+
     // Real-time filtering logic
     const filteredTrips = useMemo(() => {
-        let trips = mockTrips;
+        if (!trips) return [];
+        let items = trips;
         if (searchQuery) {
             const lowerQuery = searchQuery.toLowerCase();
-            trips = trips.filter(trip => 
-                trip.vessel.toLowerCase().includes(lowerQuery) ||
-                trip.id.toLowerCase().includes(lowerQuery) ||
-                trip.start.toLowerCase().includes(lowerQuery) ||
-                trip.end.toLowerCase().includes(lowerQuery)
+            items = items.filter(trip => 
+                trip.vessel?.name?.toLowerCase().includes(lowerQuery) ||
+                trip.id.toLowerCase().includes(lowerQuery)
             );
         }
-        return trips;
-    }, [searchQuery]);
+        return items;
+    }, [searchQuery, trips]);
 
     const handleExport = () => {
         const headers = ["Trip ID", "Vessel", "Start Location", "End Location", "Distance", "Duration", "Date", "Status"];
@@ -104,34 +109,44 @@ export default function TripHistoryPage() {
                         <tbody>
                             {filteredTrips.length > 0 ? filteredTrips.map((trip) => (
                                 <tr key={trip.id} onClick={() => router.push(`/trips/${trip.id}`)} className="hover:bg-slate-50 transition-colors border-b border-slate-50 group cursor-pointer">
-                                    <td className="px-6 py-5 text-[14px] font-bold text-blue-600">{trip.id}</td>
+                                    <td className="px-6 py-5 text-[14px] font-bold text-blue-600">{trip.id.slice(0, 8)}...</td>
                                     <td className="px-6 py-5">
                                         <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors"><Ship size={14} /></div>
-                                            <span className="text-[14px] font-bold text-slate-900">{trip.vessel}</span>
+                                            <span className="text-[14px] font-bold text-slate-900">{trip.vessel?.name || 'Unknown Vessel'}</span>
                                         </div>
                                     </td>
                                     <td className="px-6 py-5">
                                         <div className="flex items-center gap-3 text-[14px] font-semibold text-slate-700">
-                                            <span>{trip.start}</span>
+                                            <span>Start Location Untracked</span>
                                             <ArrowRight size={14} className="text-slate-400" />
-                                            <span>{trip.end}</span>
+                                            <span>{trip.status === 'ACTIVE' ? 'Ongoing' : 'Completed'}</span>
                                         </div>
                                     </td>
                                     <td className="px-6 py-5">
                                         <div className="flex flex-col gap-1">
-                                            <span className="text-[13px] font-bold text-slate-800 flex items-center gap-1.5"><MapPin size={12} className="text-slate-400"/> {trip.distance}</span>
-                                            <span className="text-[13px] font-medium text-slate-500 flex items-center gap-1.5"><Clock size={12} className="text-slate-400"/> {trip.duration}</span>
+                                            <span className="text-[13px] font-bold text-slate-800 flex items-center gap-1.5"><MapPin size={12} className="text-slate-400"/> -- nm</span>
+                                            <span className="text-[13px] font-medium text-slate-500 flex items-center gap-1.5"><Clock size={12} className="text-slate-400"/> -- h -- m</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-5 text-[14px] font-medium text-slate-600">{trip.date}</td>
+                                    <td className="px-6 py-5 text-[14px] font-medium text-slate-600">
+                                        {new Date(trip.startTime).toLocaleDateString()}
+                                    </td>
                                     <td className="px-6 py-5">
-                                        <span className="px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100">{trip.status}</span>
+                                        <span className={`px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-widest border ${
+                                            trip.status === 'ACTIVE' 
+                                                ? 'bg-blue-50 text-blue-600 border-blue-100' 
+                                                : 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                        }`}>
+                                            {trip.status}
+                                        </span>
                                     </td>
                                 </tr>
                             )) : (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center text-slate-500 font-medium">No trips matched your search.</td>
+                                    <td colSpan={6} className="px-6 py-12 text-center text-slate-500 font-medium">
+                                        {loading ? "Loading Trips..." : "No trips matched your search."}
+                                    </td>
                                 </tr>
                             )}
                         </tbody>

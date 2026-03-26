@@ -1,0 +1,211 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+  engineType      = "library"
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [postgis, uuid_ossp(map: "uuid-ossp")]
+}
+
+model Role {
+  id        String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  users     User[]
+}
+
+model User {
+  id             String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email          String              @unique
+  password       String
+  firstName      String?
+  lastName       String?
+  roleId         String              @db.Uuid
+  deletedAt      DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  billingAddress String?
+  companyName    String?
+  phoneNumber    String?
+  avatar         String?
+  preferences    Json?               @default("{}")
+  statusChanges  TripStatusHistory[]
+  role           Role                @relation(fields: [roleId], references: [id])
+
+  @@index([email])
+}
+
+model Vessel {
+  id         String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name       String
+  imo        String             @unique
+  mmsi       String             @unique
+  type       VesselType         @default(OTHER)
+  flag       String?
+  deletedAt  DateTime?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  activities ActivityTimeline[]
+  alerts     Alert[]
+  gpsLogs    GpsLog[]
+  trips      Trip[]
+
+  @@index([mmsi])
+  @@index([imo])
+}
+
+model Trip {
+  id        String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  vesselId  String              @db.Uuid
+  status    TripStatus          @default(PLANNED)
+  startTime DateTime?
+  endTime   DateTime?
+  deletedAt DateTime?
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  avgSpeed  Float?              @default(0)
+  distance  Float?              @default(0)
+  alerts    Alert[]
+  points    LocationPoint[]
+  vessel    Vessel              @relation(fields: [vesselId], references: [id])
+  history   TripStatusHistory[]
+
+  @@index([vesselId])
+  @@index([status])
+}
+
+model LocationPoint {
+  id        String                   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tripId    String                   @db.Uuid
+  latitude  Float
+  longitude Float
+  speed     Float?
+  heading   Float?
+  timestamp DateTime                 @default(now())
+  geom      Unsupported("geometry")?
+  trip      Trip                     @relation(fields: [tripId], references: [id])
+
+  @@index([tripId])
+  @@index([timestamp])
+}
+
+model Zone {
+  id        String                  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name      String
+  type      String
+  geom      Unsupported("geometry")
+  createdAt DateTime                @default(now())
+  updatedAt DateTime                @updatedAt
+  alerts    Alert[]
+}
+
+model Alert {
+  id         String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  vesselId   String        @db.Uuid
+  tripId     String?       @db.Uuid
+  zoneId     String?       @db.Uuid
+  type       String
+  severity   AlertSeverity @default(MEDIUM)
+  status     AlertStatus   @default(ACTIVE)
+  message    String
+  timestamp  DateTime      @default(now())
+  resolvedAt DateTime?
+  trip       Trip?         @relation(fields: [tripId], references: [id])
+  vessel     Vessel        @relation(fields: [vesselId], references: [id])
+  zone       Zone?         @relation(fields: [zoneId], references: [id])
+
+  @@index([vesselId])
+  @@index([tripId])
+  @@index([severity])
+}
+
+model TripStatusHistory {
+  id        String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tripId    String     @db.Uuid
+  status    TripStatus
+  changedBy String?    @db.Uuid
+  timestamp DateTime   @default(now())
+  remarks   String?
+  user      User?      @relation(fields: [changedBy], references: [id])
+  trip      Trip       @relation(fields: [tripId], references: [id])
+
+  @@index([tripId])
+}
+
+model ActivityTimeline {
+  id        String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  vesselId  String   @db.Uuid
+  event     String
+  details   String?
+  timestamp DateTime @default(now())
+  vessel    Vessel   @relation(fields: [vesselId], references: [id])
+
+  @@index([vesselId])
+  @@index([timestamp])
+}
+
+model GpsLog {
+  id           String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  vesselId     String?  @db.Uuid
+  mmsi         String?
+  utc_datetime DateTime
+  received_at  DateTime @default(now())
+  latitude     Float
+  longitude    Float
+  altitude_m   Float?
+  speed_kmh    Float?
+  heading_deg  Float?
+  satellites   Int?
+  hdop         Float?
+  fix_status   Int?
+  prns         Int[]
+  snrs         Float[]
+  vessel       Vessel?  @relation(fields: [vesselId], references: [id])
+
+  @@index([vesselId])
+  @@index([mmsi])
+  @@index([utc_datetime])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model spatial_ref_sys {
+  srid      Int     @id
+  auth_name String? @db.VarChar(256)
+  auth_srid Int?
+  srtext    String? @db.VarChar(2048)
+  proj4text String? @db.VarChar(2048)
+}
+
+enum VesselType {
+  CARGO
+  TANKER
+  PASSENGER
+  FISHING
+  TUG
+  RECREATIONAL
+  OTHER
+}
+
+enum TripStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum AlertSeverity {
+  INFO
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertStatus {
+  ACTIVE
+  RESOLVED
+  ACKNOWLEDGED
+}

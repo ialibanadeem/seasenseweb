@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>IoT GPS Live Map</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📡</text></svg>">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #0f1923;
+            color: #e0e0e0;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1a2a3a, #0d1b2a);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #00e676;
+        }
+
+        header h1 {
+            font-size: 22px;
+            color: #00e676;
+            font-weight: 600;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: rgba(0, 230, 118, 0.1);
+            border: 1px solid rgba(0, 230, 118, 0.3);
+            border-radius: 20px;
+            font-size: 13px;
+            color: #00e676;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #00e676;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        #map {
+            height: 50vh;
+            width: 100%;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            padding: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: #1a2a3a;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .card h2 {
+            font-size: 14px;
+            color: #78909c;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .data-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .data-label {
+            font-size: 11px;
+            color: #78909c;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .data-value {
+            font-size: 20px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .data-value.highlight {
+            color: #00e676;
+        }
+
+        /* Log table */
+        .log-card {
+            grid-column: 1 / -1;
+        }
+
+        .log-table-wrap {
+            overflow-x: auto;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            background: #0d1b2a;
+            color: #00e676;
+            padding: 10px 12px;
+            text-align: left;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            white-space: nowrap;
+        }
+
+        tr:hover td {
+            background: rgba(0, 230, 118, 0.05);
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-danger {
+            background: rgba(255, 82, 82, 0.2);
+            color: #ff5252;
+            border: 1px solid rgba(255, 82, 82, 0.3);
+        }
+
+        .btn-danger:hover {
+            background: rgba(255, 82, 82, 0.3);
+        }
+
+        .btn-refresh {
+            background: rgba(0, 230, 118, 0.15);
+            color: #00e676;
+            border: 1px solid rgba(0, 230, 118, 0.3);
+        }
+
+        .btn-refresh:hover {
+            background: rgba(0, 230, 118, 0.25);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #546e7a;
+            font-size: 16px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>📡 IoT GPS Live Tracking</h1>
+        <div class="status-badge">
+            <div class="status-dot"></div>
+            <span id="logCount">0 logs</span>
+        </div>
+    </header>
+
+    <div id="map"></div>
+
+    <div class="dashboard">
+        <!-- Latest Data Card -->
+        <div class="card">
+            <h2>📍 Latest Position</h2>
+            <div class="data-grid">
+                <div class="data-item">
+                    <div class="data-label">Latitude</div>
+                    <div class="data-value highlight" id="lat">—</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Longitude</div>
+                    <div class="data-value highlight" id="lng">—</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Altitude</div>
+                    <div class="data-value" id="alt">— m</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Heading</div>
+                    <div class="data-value" id="heading">—°</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Card -->
+        <div class="card">
+            <h2>📊 Signal & Motion</h2>
+            <div class="data-grid">
+                <div class="data-item">
+                    <div class="data-label">Speed</div>
+                    <div class="data-value" id="speed">— km/h</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Satellites</div>
+                    <div class="data-value highlight" id="sat">—</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">HDOP</div>
+                    <div class="data-value" id="hdop">—</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Fix Status</div>
+                    <div class="data-value" id="fix">—</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- All Logs Table -->
+        <div class="card log-card">
+            <h2>📋 All Received GPS Logs</h2>
+            <div id="logArea">
+                <div class="empty-state">No GPS data received yet. Waiting for ESP32...</div>
+            </div>
+            <div class="btn-row">
+                <button class="btn-refresh" onclick="loadLatest()">🔄 Refresh Now</button>
+                <button class="btn-danger" onclick="clearLogs()">🗑 Clear All Logs</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        let map;
+        let marker;
+        let pathLine;
+
+        // Initialize Leaflet map
+        map = L.map('map').setView([0, 0], 15);
+
+        // Dark-themed tile layer
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Green circle marker
+        marker = L.circleMarker([0, 0], {
+            radius: 10,
+            fillColor: '#00e676',
+            fillOpacity: 1,
+            color: '#fff',
+            weight: 2
+        }).addTo(map);
+
+        // Path polyline
+        pathLine = L.polyline([], {
+            color: '#00e676',
+            weight: 3,
+            opacity: 0.7
+        }).addTo(map);
+
+        // Load latest data
+        async function loadLatest() {
+            try {
+                const res = await fetch("/api/gps");
+                const logs = await res.json();
+
+                document.getElementById("logCount").innerText = logs.length + " logs";
+
+                if (logs.length === 0) {
+                    document.getElementById("logArea").innerHTML = '<div class="empty-state">No GPS data received yet. Waiting for ESP32...</div>';
+                    return;
+                }
+
+                const latest = logs[logs.length - 1];
+
+                // Update latest data cards
+                document.getElementById("lat").innerText = latest.latitude.toFixed(6);
+                document.getElementById("lng").innerText = latest.longitude.toFixed(6);
+                document.getElementById("alt").innerText = latest.altitude_m.toFixed(1) + " m";
+                document.getElementById("speed").innerText = latest.speed_kmh.toFixed(1) + " km/h";
+                document.getElementById("heading").innerText = latest.heading_deg.toFixed(1) + "°";
+                document.getElementById("sat").innerText = latest.satellites;
+                document.getElementById("hdop").innerText = latest.hdop.toFixed(2);
+                document.getElementById("fix").innerText = latest.fix_status === 1 ? "✅ Valid" : "❌ No Fix";
+
+                // Update map
+                const newPos = [latest.latitude, latest.longitude];
+                marker.setLatLng(newPos);
+                map.setView(newPos, map.getZoom());
+
+                // Update path
+                const pathCoords = logs.map(l => [l.latitude, l.longitude]);
+                pathLine.setLatLngs(pathCoords);
+
+                // Build log table
+                let html = '<div class="log-table-wrap"><table>';
+                html += '<tr><th>#</th><th>Time (UTC)</th><th>Received At</th><th>Lat</th><th>Lng</th><th>Alt (m)</th><th>Speed (km/h)</th><th>Heading</th><th>Sats</th><th>HDOP</th><th>Fix</th><th>PRNs</th><th>SNRs</th></tr>';
+
+                // Show logs newest first
+                for (let i = logs.length - 1; i >= 0; i--) {
+                    const l = logs[i];
+                    html += `<tr>
+                        <td>${i}</td>
+                        <td>${l.utc_datetime || '—'}</td>
+                        <td>${l.received_at || '—'}</td>
+                        <td>${l.latitude.toFixed(6)}</td>
+                        <td>${l.longitude.toFixed(6)}</td>
+                        <td>${l.altitude_m.toFixed(1)}</td>
+                        <td>${l.speed_kmh.toFixed(1)}</td>
+                        <td>${l.heading_deg.toFixed(1)}°</td>
+                        <td>${l.satellites}</td>
+                        <td>${l.hdop.toFixed(2)}</td>
+                        <td>${l.fix_status === 1 ? '✅' : '❌'}</td>
+                        <td>${(l.prns || []).join(', ') || '—'}</td>
+                        <td>${(l.snrs || []).join(', ') || '—'}</td>
+                    </tr>`;
+                }
+                html += '</table></div>';
+                document.getElementById("logArea").innerHTML = html;
+
+            } catch (err) {
+                console.error("Error fetching GPS data:", err);
+            }
+        }
+
+        async function clearLogs() {
+            await fetch("/api/gps", { method: "DELETE" });
+            loadLatest();
+        }
+
+        // Auto-refresh every 3 seconds
+        loadLatest();
+        setInterval(loadLatest, 3000);
+    </script>
+
+</body>
+
+</html>

@@ -30,9 +30,11 @@ export const useVesselStore = create<VesselState>((set) => ({
     updateLivePosition: (update) => {
         set((state) => {
             const currentTrail = state.liveTrails[update.vesselId] || [];
-            // Keep at most 50 recent points for the trail
-            const newTrail = [...currentTrail, update].slice(-50);
-
+            
+            // Reverted to a static array size (100 pings = ~8.3 minutes of visible driving history).
+            // This firmly guarantees the trail NEVER mathematically evaporates visually if the physical hardware drops WiFi/GPS packets momentarily!
+            const newTrail = [...currentTrail, update].slice(-100);
+            
             return {
                 livePositions: {
                     ...state.livePositions,

@@ -12,6 +12,7 @@ export default function DashboardMap() {
 
     // Read live positions from the store
     const livePositions = useVesselStore((state) => state.livePositions);
+    const liveTrails = useVesselStore((state) => state.liveTrails);
 
     useEffect(() => {
         if (map.current || !mapContainer.current) return; // Initialize map only once
@@ -20,12 +21,33 @@ export default function DashboardMap() {
 
         map.current = new maptilersdk.Map({
             container: mapContainer.current as HTMLDivElement,
-            // Using the standard Base map style per user request
-            style: `https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_KEY}`,
+            // Using the ultra-clean Data Visualization Dark style to reduce visual clutter and enhance the neon UI
+            style: `https://api.maptiler.com/maps/dataviz-dark/style.json?key=${MAPTILER_KEY}`,
             center: [66.9806, 24.8143], // Centered exactly at Kemari, Karachi for the 3D boat demo
             zoom: 11,
             navigationControl: false,
             geolocateControl: false
+        });
+
+        map.current.on('load', () => {
+            if (map.current) {
+                map.current.addSource('vessel-trails', {
+                    type: 'geojson',
+                    data: { type: 'FeatureCollection', features: [] }
+                });
+
+                map.current.addLayer({
+                    id: 'vessel-trails-line',
+                    type: 'line',
+                    source: 'vessel-trails',
+                    layout: { 'line-join': 'round', 'line-cap': 'round' },
+                    paint: {
+                        'line-color': '#06b6d4', // Vivid neon cyan
+                        'line-width': 8,         // Heavy prominent path stroke
+                        'line-opacity': 0.9,
+                    }
+                });
+            }
         });
 
         return () => {
@@ -35,6 +57,27 @@ export default function DashboardMap() {
             }
         };
     }, []);
+
+    // Effect to structurally update GeoJSON historical path wake trails on map
+    useEffect(() => {
+        if (!map.current || !map.current.isStyleLoaded()) return;
+        const source = map.current.getSource('vessel-trails') as maptilersdk.GeoJSONSource;
+        if (!source) return;
+
+        const features = Object.entries(liveTrails).map(([vesselId, trail]) => ({
+            type: 'Feature' as const,
+            properties: { vesselId },
+            geometry: {
+                type: 'LineString' as const,
+                coordinates: trail.map(p => [
+                    p.location?.lng ?? p.longitude ?? 0,
+                    p.location?.lat ?? p.latitude ?? 0
+                ])
+            }
+        }));
+
+        source.setData({ type: 'FeatureCollection', features });
+    }, [liveTrails]);
 
     // Effect to update makers when livePositions change
     useEffect(() => {
@@ -65,12 +108,6 @@ export default function DashboardMap() {
                 if (svgWrapper) {
                     svgWrapper.style.transform = `rotate(${vesselData.heading}deg)`;
                 }
-                
-                // Update dynamic status glow 
-                const imgNode = el.querySelector('img') as HTMLElement;
-                if (imgNode) {
-                    imgNode.style.filter = `drop-shadow(0px 10px 12px ${color}80)`;
-                }
             } else {
                 const el = document.createElement('div');
                 
@@ -80,11 +117,11 @@ export default function DashboardMap() {
                 el.style.height = '72px';
                 el.style.position = 'relative';
 
-                // We apply a -45deg offset because the raw PNG boat points diagonally Northwest by default
+                // The new 3D icon naturally points true-north
                 el.innerHTML = `
                     <div class="boat-wrapper w-full h-full transition-transform duration-[1000ms] ease-linear" style="transform: rotate(${vesselData.heading}deg)">
-                        <div class="relative w-full h-full animate-[bounce_3s_ease-in-out_infinite]" style="transform: rotate(-45deg)">
-                            <img src="/boat-marker.png" alt="3D Boat" class="w-full h-full object-contain opacity-95 hover:opacity-100 transition-opacity" style="filter: drop-shadow(0px 10px 12px ${color}80);" />
+                        <div class="relative w-full h-full animate-[bounce_3s_ease-in-out_infinite]">
+                            <img src="/boat-marker.png" alt="3D Boat" class="w-full h-full object-contain opacity-95 hover:opacity-100 transition-opacity" />
                         </div>
                     </div>
                 `;
@@ -99,6 +136,16 @@ export default function DashboardMap() {
                     .addTo(map.current!);
                 
                 markersRef.current[vesselId] = newMarker;
+            }
+
+            // Auto-follow logic: If this is the main vessel, center the map around it
+            // Only auto-follow if the vessel has successfully moved or is the primary tracker
+            if (map.current && (vesselId === Object.keys(livePositions)[0])) {
+                map.current.easeTo({
+                    center: [lng, lat],
+                    duration: 1000,
+                    easing: (t) => t
+                });
             }
         });
 

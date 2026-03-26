@@ -13,7 +13,7 @@ export const useTrackingSocket = (namespace = 'tracking') => {
         const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000';
 
         const socket = io(`${socketUrl}/${namespace}`, {
-            transports: ['websocket'],
+            // allowing fallback to polling if websocket fails
         });
 
         socketRef.current = socket;

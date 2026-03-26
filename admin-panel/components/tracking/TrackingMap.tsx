@@ -36,8 +36,8 @@ export const TrackingMap = ({ className }: TrackingMapProps) => {
         console.log("📍 TrackingMap: Initializing with API Key:", apiKey.substring(0, 5) + "...");
 
         try {
-            // Using the standard Base map style per user request
-            const style = `https://api.maptiler.com/maps/basic-v2/style.json?key=${apiKey}`;
+            // Using the ultra-clean Data Visualization Dark style to make the Neon trails pop
+            const style = `https://api.maptiler.com/maps/dataviz-dark/style.json?key=${apiKey}`;
 
             map.current = new maptilersdk.Map({
                 container: mapContainer.current,
@@ -76,9 +76,9 @@ export const TrackingMap = ({ className }: TrackingMapProps) => {
                             'line-cap': 'round'
                         },
                         paint: {
-                            'line-color': '#0284c7',
-                            'line-width': 4,
-                            'line-opacity': 0.8,
+                        'line-color': '#06b6d4', // Bright neon cyan
+                        'line-width': 8,         // Doubled thickness for hyper-visibility
+                        'line-opacity': 0.9,
                         }
                     });
                 }
@@ -166,10 +166,11 @@ export const TrackingMap = ({ className }: TrackingMapProps) => {
                 el.style.height = '72px';
                 el.style.position = 'relative';
 
+                // Removed the -45deg offset because the new 3D boat naturally points True-North
                 el.innerHTML = `
                     <div class="boat-wrapper w-full h-full transition-transform duration-[1000ms] ease-linear group-hover:scale-110" style="transform: rotate(${position.heading}deg)">
-                        <div class="relative w-full h-full animate-[bounce_3s_ease-in-out_infinite]" style="transform: rotate(-45deg)">
-                            <img src="/boat-marker.png" alt="3D Boat" class="w-full h-full object-contain opacity-95 hover:opacity-100 transition-opacity" style="filter: drop-shadow(0px 10px 12px ${color}80);" />
+                        <div class="relative w-full h-full animate-[bounce_3s_ease-in-out_infinite]">
+                            <img src="/boat-marker.png" alt="3D Boat" class="w-full h-full object-contain opacity-95 hover:opacity-100 transition-opacity" />
                             ${isEmergency ? '<div class="absolute inset-0 border-4 border-red-500 rounded-full animate-ping opacity-50 scale-150 pointer-events-none"></div>' : ''}
                         </div>
                     </div>
@@ -192,13 +193,9 @@ export const TrackingMap = ({ className }: TrackingMapProps) => {
                 
                 const el = marker.getElement();
                 
-                // Update universal Rotation wrapper directly
+                // Re-zero Universal Rotation wrapper dynamically
                 const svgWrapper = el.querySelector('.boat-wrapper') as HTMLElement;
                 if (svgWrapper) svgWrapper.style.transform = `rotate(${position.heading}deg)`;
-
-                // Update hue filter visually if status changed dynamically rather than remounting the DOM
-                const imgNode = el.querySelector('img') as HTMLElement;
-                if (imgNode) imgNode.style.filter = `drop-shadow(0px 10px 12px ${color}80)`;
 
                 const pulse = el.querySelector('.animate-ping');
                 if (isEmergency && !pulse) {
