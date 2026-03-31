@@ -63,9 +63,9 @@ export default function DashboardHome() {
 
 
     return (
-        <div className="relative w-full h-full bg-slate-100 overflow-hidden">
+        <div className="relative w-full h-full bg-slate-50 overflow-hidden">
             {/* Full Bleed Map Background */}
-            <div className="absolute inset-0 z-0">
+            <div className="absolute inset-0 z-0 pointer-events-auto">
                 <DashboardMap />
             </div>
 
@@ -73,39 +73,39 @@ export default function DashboardHome() {
             <div className="absolute inset-0 z-10 p-6 pointer-events-none flex flex-col justify-between">
                 
                 {/* Top Section */}
-                <div className="flex justify-between items-start gap-6 w-full pointer-events-auto">
+                <div className="flex justify-between items-start gap-6 w-full pointer-events-none">
                     
                     {/* Top Left: Header & Metrics Strip */}
-                    <div className="flex flex-col gap-4 max-w-[800px] w-full">
+                    <div className="flex flex-col gap-4 max-w-[800px] w-full pointer-events-none">
                         
                         {/* Header Glass Card iOS Style */}
-                        <div className="bg-slate-900/40 backdrop-blur-2xl saturate-150 rounded-3xl border border-white/10 shadow-2xl p-5 flex justify-between items-center transition-all">
+                        <div className="bg-white/80 backdrop-blur-2xl px-8 py-6 rounded-[32px] border border-white/40 shadow-[0_20px_50px_rgba(0,0,0,0.05)] flex justify-between items-center transition-all pointer-events-auto">
                             <div>
-                                <h1 className="text-[22px] font-medium text-white flex items-center gap-2 tracking-wide">
+                                <h1 className="text-[26px] font-bold text-slate-900 flex items-center gap-3 tracking-tight">
                                     Live Fleet Overview
                                 </h1>
-                                <p className={`text-[13px] font-light text-slate-300 mt-1 flex items-center gap-2`}>
+                                <p className={`text-[14px] font-medium text-slate-500 mt-1 flex items-center gap-3`}>
                                     Real-time tracking and metrics.
-                                    <span className={`flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-medium px-2.5 py-1 rounded-full border ${isConnected ? 'bg-emerald-900/30 border-emerald-500/20 text-emerald-400' : 'bg-rose-900/30 border-rose-500/20 text-rose-400'}`}>
-                                        <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]' : 'bg-rose-400'}`}></span>
-                                        {isConnected ? 'Socket Connected' : 'Socket Disconnected'}
+                                    <span className={`flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold px-3 py-1 rounded-full border ${isConnected ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-rose-50 border-rose-200 text-rose-600'}`}>
+                                        <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></span>
+                                        {isConnected ? 'Server Sync Active' : 'Disconnected'}
                                     </span>
                                 </p>
                             </div>
                         </div>
 
                         {/* Simplified KPI Vertical Stack - Matching Live Activity Style */}
-                        <div className="w-[280px] flex flex-col bg-slate-900/40 backdrop-blur-2xl saturate-150 rounded-3xl border border-white/10 shadow-2xl overflow-hidden shrink-0 pointer-events-auto">
-                            <div className="p-4 border-b border-white/10 flex items-center gap-2 bg-white/5">
-                                <BarChart4 size={16} className="text-emerald-400" />
-                                <h2 className="text-[14px] font-medium text-white tracking-wide">Fleet Status</h2>
+                        <div className="w-[300px] flex flex-col bg-white/70 backdrop-blur-3xl rounded-[32px] border border-white/50 shadow-[0_20px_50px_rgba(0,0,0,0.06)] overflow-hidden shrink-0 pointer-events-auto">
+                            <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3 bg-slate-50/50">
+                                <Activity size={18} className="text-blue-500" />
+                                <h2 className="text-[15px] font-bold text-slate-800 tracking-tight">Fleet Status</h2>
                             </div>
                             
-                            <div className="p-5 flex flex-col gap-5">
-                                <KPIItem label="Total Vessels" value={totalVesselsCount} icon={<Ship size={14} />} color="text-sky-400" />
-                                <KPIItem label="Active (Moving)" value={activeCount} icon={<Activity size={14} />} color="text-emerald-400" />
-                                <KPIItem label="Idle / Anchored" value={idleCount} icon={<Clock size={14} />} color="text-amber-400" />
-                                <KPIItem label="Offline" value={offlineCount} icon={<WifiOff size={14} />} color="text-rose-400" />
+                            <div className="p-6 flex flex-col gap-6">
+                                <KPIItem label="Total Vessels" value={totalVesselsCount} icon={<Ship size={14} />} color="text-blue-600" bgColor="bg-blue-50" />
+                                <KPIItem label="Active (Moving)" value={activeCount} icon={<Zap size={14} />} color="text-emerald-600" bgColor="bg-emerald-50" />
+                                <KPIItem label="Idle / Anchored" value={idleCount} icon={<Clock size={14} />} color="text-amber-600" bgColor="bg-amber-50" />
+                                <KPIItem label="Offline" value={offlineCount} icon={<WifiOff size={14} />} color="text-rose-600" bgColor="bg-rose-50" />
                             </div>
                         </div>
                     </div>
@@ -115,32 +115,32 @@ export default function DashboardHome() {
 
             {/* Emergency SOS Overlay */}
             {activeEmergency && (
-                <div className="absolute inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-md bg-rose-950/20 pointer-events-auto">
-                    <div className="max-w-md w-full bg-slate-900/90 backdrop-blur-2xl rounded-[32px] border border-rose-500/50 shadow-[0_0_50px_rgba(244,63,94,0.3)] p-8 flex flex-col items-center text-center gap-6 animate-in fade-in zoom-in duration-300">
-                        <div className="w-20 h-20 rounded-full bg-rose-500/20 flex items-center justify-center animate-pulse">
-                            <AlertTriangle size={40} className="text-rose-500" />
+                <div className="absolute inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-white/40 pointer-events-auto">
+                    <div className="max-w-md w-full bg-white/95 backdrop-blur-3xl rounded-[40px] border-4 border-rose-500 shadow-[0_40px_100px_rgba(225,29,72,0.3)] p-10 flex flex-col items-center text-center gap-8 animate-in fade-in zoom-in duration-500">
+                        <div className="w-24 h-24 rounded-full bg-rose-50 flex items-center justify-center animate-bounce shadow-inner">
+                            <AlertTriangle size={48} className="text-rose-600" />
                         </div>
                         <div>
-                            <h2 className="text-2xl font-bold text-white mb-2">EMERGENCY SOS</h2>
-                            <p className="text-rose-200/80 font-medium tracking-tight">
-                                Distress signal received from {vessels[activeEmergency.vesselId]?.name || `Vessel ${activeEmergency.vesselId.slice(0, 8)}`}
+                            <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tighter">EMERGENCY ALERT</h2>
+                            <p className="text-rose-600 font-bold tracking-tight uppercase text-sm">
+                                Distress signal from {vessels[activeEmergency.vesselId]?.name || `Vessel ${activeEmergency.vesselId.slice(0, 8)}`}
                             </p>
                         </div>
-                        <div className="w-full bg-white/5 rounded-2xl p-4 border border-white/10 text-left">
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Location</span>
-                                <span className="text-[10px] text-slate-400 font-mono">{new Date(activeEmergency.timestamp).toLocaleTimeString()}</span>
+                        <div className="w-full bg-slate-50 rounded-3xl p-6 border border-slate-100 text-left shadow-sm">
+                            <div className="flex justify-between items-center mb-3">
+                                <span className="text-[11px] text-slate-400 uppercase tracking-[0.2em] font-black">Position Lock</span>
+                                <span className="text-[11px] text-rose-500 font-mono font-bold">{new Date(activeEmergency.timestamp).toLocaleTimeString()}</span>
                             </div>
-                            <div className="text-white font-mono text-sm">
+                            <div className="text-slate-900 font-mono text-lg font-bold">
                                 {activeEmergency.latitude.toFixed(6)}°N, {activeEmergency.longitude.toFixed(6)}°E
                             </div>
                         </div>
-                        <div className="flex gap-3 w-full mt-2">
+                        <div className="flex gap-4 w-full mt-2">
                             <button 
                                 onClick={clearEmergency}
-                                className="flex-1 py-4 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-bold transition-all shadow-lg shadow-rose-900/20"
+                                className="flex-1 py-5 bg-rose-600 hover:bg-rose-700 text-white rounded-[24px] font-black transition-all shadow-xl shadow-rose-200 active:scale-95"
                             >
-                                DISMISS ALERT
+                                ACKNOWLEDGE & DISMISS
                             </button>
                         </div>
                     </div>
@@ -152,16 +152,16 @@ export default function DashboardHome() {
 
 // Subcomponents
 
-function KPIItem({ label, value, icon, color }: any) {
+function KPIItem({ label, value, icon, color, bgColor }: any) {
     return (
         <div className="flex items-center justify-between group cursor-pointer">
-            <div className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${color} bg-white/5 border border-white/5 transition-all duration-300 group-hover:bg-white/10 group-hover:scale-110`}>
+            <div className="flex items-center gap-4">
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${color} ${bgColor} border border-transparent transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg`}>
                     {icon}
                 </div>
-                <span className="text-[13px] font-light text-slate-400 group-hover:text-slate-200 transition-colors uppercase tracking-wider">{label}</span>
+                <span className="text-[13px] font-bold text-slate-500 group-hover:text-slate-900 transition-colors uppercase tracking-widest">{label}</span>
             </div>
-            <span className="text-[20px] font-medium text-white tracking-tight">{value}</span>
+            <span className="text-[24px] font-black text-slate-900 tracking-tighter">{value}</span>
         </div>
     );
 }

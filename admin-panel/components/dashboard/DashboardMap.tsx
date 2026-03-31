@@ -21,12 +21,17 @@ export default function DashboardMap() {
 
         map.current = new maptilersdk.Map({
             container: mapContainer.current as HTMLDivElement,
-            // Using the ultra-clean Data Visualization Dark style to reduce visual clutter and enhance the neon UI
-            style: `https://api.maptiler.com/maps/dataviz-dark/style.json?key=${MAPTILER_KEY}`,
-            center: [66.9806, 24.8143], // Centered exactly at Kemari, Karachi for the 3D boat demo
+            // Using the ultra-clean Data Visualization Light style for a premium light-themed dashboard
+            style: `https://api.maptiler.com/maps/dataviz-light/style.json?key=${MAPTILER_KEY}`,
+            center: [67.0011, 24.8607], // Centered at Karachi
             zoom: 11,
-            navigationControl: false,
-            geolocateControl: false
+            dragPan: true,
+            scrollZoom: true,
+            boxZoom: true,
+            doubleClickZoom: true,
+            touchZoomRotate: true,
+            navigationControl: true,
+            geolocateControl: true
         });
 
         map.current.on('load', () => {
@@ -120,11 +125,14 @@ export default function DashboardMap() {
                 // The new 3D icon naturally points true-north
                 el.innerHTML = `
                     <div class="boat-wrapper w-full h-full transition-transform duration-[1000ms] ease-linear" style="transform: rotate(${vesselData.heading}deg)">
-                        <div class="relative w-full h-full animate-[bounce_3s_ease-in-out_infinite]">
+                        <div class="relative w-full h-full">
                             <img src="/boat-marker.png" alt="3D Boat" class="w-full h-full object-contain opacity-95 hover:opacity-100 transition-opacity" />
                         </div>
                     </div>
                 `;
+
+                // Add 5s linear transition for the coordinates (matching polling interval)
+                el.style.transition = 'all 5s linear';
 
                 const newMarker = new maptilersdk.Marker({ element: el })
                     .setLngLat([lng, lat])
@@ -138,15 +146,6 @@ export default function DashboardMap() {
                 markersRef.current[vesselId] = newMarker;
             }
 
-            // Auto-follow logic: If this is the main vessel, center the map around it
-            // Only auto-follow if the vessel has successfully moved or is the primary tracker
-            if (map.current && (vesselId === Object.keys(livePositions)[0])) {
-                map.current.easeTo({
-                    center: [lng, lat],
-                    duration: 1000,
-                    easing: (t) => t
-                });
-            }
         });
 
         // Clean up stale markers

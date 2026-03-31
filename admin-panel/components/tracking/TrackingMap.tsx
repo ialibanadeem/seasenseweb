@@ -36,17 +36,17 @@ export const TrackingMap = ({ className }: TrackingMapProps) => {
         console.log("📍 TrackingMap: Initializing with API Key:", apiKey.substring(0, 5) + "...");
 
         try {
-            // Using the ultra-clean Data Visualization Dark style to make the Neon trails pop
-            const style = `https://api.maptiler.com/maps/dataviz-dark/style.json?key=${apiKey}`;
+            const styleUrl = `https://api.maptiler.com/maps/dataviz-light/style.json?key=${apiKey}`;
+            console.log("🗺️ TrackingMap: Using Style URL:", styleUrl);
 
             map.current = new maptilersdk.Map({
                 container: mapContainer.current,
-                style: style,
-                center: [55.296249, 25.176987],
-                zoom: 11,
-                navigationControl: false,
-                terrainControl: false,
-                geolocateControl: false,
+                style: 'dataviz-light',
+                center: [67.0011, 24.8607],
+                zoom: 2,
+                navigationControl: true,
+                terrainControl: true,
+                geolocateControl: true,
                 attributionControl: { compact: true }
             });
 
@@ -76,9 +76,9 @@ export const TrackingMap = ({ className }: TrackingMapProps) => {
                             'line-cap': 'round'
                         },
                         paint: {
-                        'line-color': '#06b6d4', // Bright neon cyan
-                        'line-width': 8,         // Doubled thickness for hyper-visibility
-                        'line-opacity': 0.9,
+                        'line-color': '#3b82f6', // Professional blue for light mode
+                        'line-width': 4,
+                        'line-opacity': 0.4,
                         }
                     });
                 }
@@ -166,7 +166,7 @@ export const TrackingMap = ({ className }: TrackingMapProps) => {
                 el.style.height = '72px';
                 el.style.position = 'relative';
 
-                // Removed the -45deg offset because the new 3D boat naturally points True-North
+                // Boat appearance
                 el.innerHTML = `
                     <div class="boat-wrapper w-full h-full transition-transform duration-[1000ms] ease-linear group-hover:scale-110" style="transform: rotate(${position.heading}deg)">
                         <div class="relative w-full h-full animate-[bounce_3s_ease-in-out_infinite]">
@@ -182,6 +182,32 @@ export const TrackingMap = ({ className }: TrackingMapProps) => {
                         position.location?.lat ?? position.latitude ?? 0
                     ])
                     .addTo(map.current!);
+
+                // Add popup interaction
+                const popup = new maptilersdk.Popup({ offset: 25, closeButton: false })
+                    .setHTML(`
+                        <div class="p-3 min-w-[180px] font-roboto">
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="w-2 h-2 rounded-full ${position.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'}"></div>
+                                <span class="text-[14px] font-bold text-slate-800">${position.vesselName || 'Vessel ' + vesselId}</span>
+                            </div>
+                            <div class="space-y-1.5 mb-3">
+                                <div class="flex justify-between text-[11px]">
+                                    <span class="text-slate-500 font-medium">Speed</span>
+                                    <span class="text-slate-800 font-bold">${(position.speed || 0).toFixed(1)} kn</span>
+                                </div>
+                                <div class="flex justify-between text-[11px]">
+                                    <span class="text-slate-500 font-medium">Heading</span>
+                                    <span class="text-slate-800 font-bold">${(position.heading || 0)}°</span>
+                                </div>
+                            </div>
+                            <a href="/fleet/${vesselId}" class="block w-full text-center py-2 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-lg transition-colors">
+                                VIEW FULL DETAILS
+                            </a>
+                        </div>
+                    `);
+
+                marker.setPopup(popup);
 
                 el.addEventListener('click', () => selectVessel(vesselId));
                 markers.current[vesselId] = marker;
@@ -213,7 +239,7 @@ export const TrackingMap = ({ className }: TrackingMapProps) => {
         <div className={`relative w-full h-full ${className} overflow-hidden`}>
             <div
                 ref={mapContainer}
-                className="absolute inset-0 z-0"
+                className="absolute inset-0 z-0 bg-transparent"
             />
             {/* Subtle Gradient Overlay for UI clarity */}
             <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-white/10 via-transparent to-white/5 z-10" />

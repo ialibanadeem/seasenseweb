@@ -129,7 +129,7 @@ export function LiveScreen() {
     <div className="relative flex h-full flex-col">
       {/* Header - floating on top */}
       <div className="relative z-[1100]">
-        <AppHeader title="Samundri Shaheen" subtitle="KHI-2024-001" />
+        <AppHeader title="Shaheen" subtitle="KHI-2024-001" />
       </div>
 
       {/* Full-bleed map fills entire remaining area */}

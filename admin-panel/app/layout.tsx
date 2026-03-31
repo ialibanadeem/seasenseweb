@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import { useThemeStore } from "../store/useThemeStore";
 import { NavigationSidebar } from "../components/layout/NavigationSidebar";
-import { MockDataInitializer } from "../components/providers/MockDataInitializer";
 
 import { TopNavigationBar } from "../components/layout/TopNavigationBar";
 
@@ -47,11 +46,10 @@ export default function RootLayout({
       <body className={`${roboto.variable} ${montserrat.variable} antialiased font-roboto bg-[#f4f6fb] text-slate-800`}>
         <QueryClientProvider client={queryClient}>
           <div className="flex w-full h-screen text-slate-900 bg-white overflow-hidden relative">
-              <MockDataInitializer />
               <NavigationSidebar />
               <div className="flex-1 flex flex-col overflow-hidden bg-[#fafbfc]">
                   <TopNavigationBar />
-                  <main className="flex-1 overflow-y-auto">
+                  <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
                       {children}
                   </main>
               </div>

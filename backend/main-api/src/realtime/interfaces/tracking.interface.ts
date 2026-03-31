@@ -5,6 +5,8 @@ export class LocationUpdatePayload {
   longitude: number;
   speed: number;
   heading: number;
+  altitude?: number;
+  satellites?: number;
   timestamp: Date;
 }
 
@@ -26,7 +28,9 @@ export interface VesselLiveUpdate {
   };
   speed: number;
   heading: number;
-  status: 'ACTIVE' | 'SOS';
+  altitude?: number;
+  satellites?: number;
+  status: 'ACTIVE' | 'SOS' | 'IDLE' | 'EMERGENCY';
   lastSeen: Date;
 }
 

@@ -3,16 +3,7 @@
 import React, { useState } from 'react';
 import { Filter, Search, ChevronDown, Check, Box } from 'lucide-react';
 
-const MOCK_ORDERS = [
-    { id: 'ORD-2341', item: 'Concrete Blocks', qty: '800 pcs', customer: 'BuildCo', date: 'Sep 29, 2025', status: 'Scheduled', amount: '$4,200' },
-    { id: 'ORD-2342', item: 'Wooden Planks', qty: '500 pcs', customer: 'Timbers Inc', date: 'Sep 22, 2025', status: 'On The Way', amount: '$1,500' },
-    { id: 'ORD-2343', item: 'Cement Bags', qty: '300 pcs', customer: 'Metro Build', date: 'Sep 23, 2025', status: 'Scheduled', amount: '$900' },
-    { id: 'ORD-2344', item: 'Steel Rebar', qty: '1000 pcs', customer: 'ConstructIt', date: 'Oct 05, 2025', status: 'Pending', amount: '$8,500' },
-    { id: 'ORD-2345', item: 'Glass Panels', qty: '150 pcs', customer: 'ClearView', date: 'Oct 10, 2025', status: 'Canceled', amount: '$3,000' },
-    { id: 'ORD-2346', item: 'Roofing Tiles', qty: '2000 pcs', customer: 'TopRoof', date: 'Sep 15, 2025', status: 'Delivered', amount: '$5,400' },
-    { id: 'ORD-2347', item: 'Floor Tiles', qty: '600 pcs', customer: 'FloorMaster', date: 'Sep 18, 2025', status: 'Delivered', amount: '$2,100' },
-    { id: 'ORD-2348', item: 'Pipes', qty: '400 pcs', customer: 'PlumbRight', date: 'Sep 30, 2025', status: 'Scheduled', amount: '$1,200' },
-];
+const MOCK_ORDERS: any[] = [];
 
 export default function OrdersPage() {
     const [selected, setSelected] = useState<string[]>([]);

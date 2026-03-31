@@ -63,22 +63,8 @@ export class GpsPollerService implements OnModuleInit, OnModuleDestroy {
                     }
                 }
             } catch (error) {
-                this.logger.error(`Polling Error: ${error.message}. Switching to MOCK tracking for Test Vessel 001.`);
-                
-                // FALLBACK: Generate mock movement so the user can test the dashboard
-                const mockLat = 24.8 + (Math.random() * 0.2);
-                const mockLng = 67.0 + (Math.random() * 0.2);
-                const mockPing = {
-                    id: Date.now(),
-                    received_at: new Date().toISOString(),
-                    latitude: mockLat,
-                    longitude: mockLng,
-                    speed_kmh: 15 + (Math.random() * 10),
-                    heading_deg: Math.floor(Math.random() * 360),
-                    mmsi: '987654321'
-                };
-                
-                await this.redisService.publish('gps:updates', JSON.stringify(mockPing));
+                this.logger.error(`Polling Error (Hardware Offline): ${error.message}`);
+                // No fallback to mock data; correctly reflect hardware offline status
             }
         }, 5000); 
     }

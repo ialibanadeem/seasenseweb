@@ -16,6 +16,11 @@ export class TripsController {
         return this.tripsService.findAll();
     }
 
+    @Get(':id')
+    findOne(@Param('id') id: string) {
+        return this.tripsService.findOne(id);
+    }
+
     @Post(':vesselId/start')
     startTrip(
         @Param('vesselId') vesselId: string,

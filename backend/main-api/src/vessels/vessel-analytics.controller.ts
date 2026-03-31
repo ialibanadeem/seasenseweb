@@ -2,11 +2,16 @@ import { Controller, Get, Param } from '@nestjs/common';
 import { VesselAnalyticsService } from './vessel-analytics.service';
 import { Roles } from '../auth/decorators/roles.decorator';
 
-@Controller('vessels/:id/analytics')
+@Controller('vessels/analytics')
 export class VesselAnalyticsController {
     constructor(private readonly analyticsService: VesselAnalyticsService) {}
 
-    @Get('overview')
+    @Get('fleet-overview')
+    getFleetOverview() {
+        return this.analyticsService.getFleetOverview();
+    }
+
+    @Get(':id/overview')
     getOverview(@Param('id') id: string) {
         return this.analyticsService.getAnalytics(id);
     }

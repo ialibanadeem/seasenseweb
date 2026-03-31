@@ -81,9 +81,9 @@ export function SOSButton({ lat, lng }: SOSButtonProps) {
       const result = await sendSOSAlert({
         lat,
         lng,
-        vesselName: "Samundri Shaheen",
+        vesselName: "Shaheen",
         registration: "KHI-2024-001",
-        mmsi: "507000001",
+        mmsi: "987654321",
         timestamp: new Date().toISOString(),
       })
       setState(result.ok ? "sent" : "error")

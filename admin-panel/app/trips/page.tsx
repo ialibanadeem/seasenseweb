@@ -1,8 +1,72 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Route, Search, Filter, Download, ArrowRight, MapPin, Clock, Ship } from 'lucide-react';
+import { reverseGeocode, calculateDistance, formatDuration } from '@/lib/geocoding';
+
+const TripRow = ({ trip, sequenceId, onClick }: { trip: any, sequenceId: string, onClick: () => void }) => {
+    const [startLocation, setStartLocation] = useState<string>('Loading...');
+    const [endLocation, setEndLocation] = useState<string>('Loading...');
+
+    useEffect(() => {
+        const resolveLocations = async () => {
+            if (trip.startPoint && trip.endPoint) {
+                const [start, end] = await Promise.all([
+                    reverseGeocode(trip.startPoint.latitude, trip.startPoint.longitude),
+                    reverseGeocode(trip.endPoint.latitude, trip.endPoint.longitude)
+                ]);
+                
+                setStartLocation(start);
+                setEndLocation(trip.status === 'ACTIVE' ? 'Ongoing' : end);
+            } else {
+                setStartLocation('Untracked');
+                setEndLocation('Untracked');
+            }
+        };
+        resolveLocations();
+    }, [trip]);
+
+    const distance = trip.distance || 0;
+    const duration = useMemo(() => formatDuration(trip.startTime, trip.endTime), [trip.startTime, trip.endTime]);
+
+    return (
+        <tr onClick={onClick} className="hover:bg-slate-50 transition-colors border-b border-slate-50 group cursor-pointer">
+            <td className="px-6 py-5 text-[14px] font-bold text-blue-600">Trip #{sequenceId}</td>
+            <td className="px-6 py-5">
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors"><Ship size={14} /></div>
+                    <span className="text-[14px] font-bold text-slate-900">{trip.vessel?.name || 'Unknown Vessel'}</span>
+                </div>
+            </td>
+            <td className="px-6 py-5">
+                <div className="flex items-center gap-3 text-[14px] font-semibold text-slate-700">
+                    <span className="truncate max-w-[150px]" title={startLocation}>{startLocation}</span>
+                    <ArrowRight size={14} className="text-slate-400 flex-shrink-0" />
+                    <span className="truncate max-w-[150px]" title={endLocation}>{endLocation}</span>
+                </div>
+            </td>
+            <td className="px-6 py-5">
+                <div className="flex flex-col gap-1">
+                    <span className="text-[13px] font-bold text-slate-800 flex items-center gap-1.5"><MapPin size={12} className="text-slate-400"/> {distance.toFixed(1)} nm</span>
+                    <span className="text-[13px] font-medium text-slate-500 flex items-center gap-1.5"><Clock size={12} className="text-slate-400"/> {duration}</span>
+                </div>
+            </td>
+            <td className="px-6 py-5 text-[14px] font-medium text-slate-600">
+                {new Date(trip.startTime).toLocaleDateString()}
+            </td>
+            <td className="px-6 py-5">
+                <span className={`px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-widest border ${
+                    trip.status === 'ACTIVE' 
+                        ? 'bg-blue-50 text-blue-600 border-blue-100' 
+                        : 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                }`}>
+                    {trip.status}
+                </span>
+            </td>
+        </tr>
+    );
+};
 
 export default function TripHistoryPage() {
     const [trips, setTrips] = useState<any[]>([]);
@@ -10,7 +74,7 @@ export default function TripHistoryPage() {
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState('');
 
-    React.useEffect(() => {
+    useEffect(() => {
         const fetchTrips = async () => {
             try {
                 const response = await fetch('http://localhost:3005/trips');
@@ -25,7 +89,6 @@ export default function TripHistoryPage() {
         fetchTrips();
     }, []);
 
-    // Real-time filtering logic
     const filteredTrips = useMemo(() => {
         if (!trips) return [];
         let items = trips;
@@ -33,6 +96,7 @@ export default function TripHistoryPage() {
             const lowerQuery = searchQuery.toLowerCase();
             items = items.filter(trip => 
                 trip.vessel?.name?.toLowerCase().includes(lowerQuery) ||
+                trip.sequenceId?.toString().includes(lowerQuery) ||
                 trip.id.toLowerCase().includes(lowerQuery)
             );
         }
@@ -40,10 +104,10 @@ export default function TripHistoryPage() {
     }, [searchQuery, trips]);
 
     const handleExport = () => {
-        const headers = ["Trip ID", "Vessel", "Start Location", "End Location", "Distance", "Duration", "Date", "Status"];
+        const headers = ["Trip ID", "Vessel", "Date", "Status"];
         const csvContent = [
             headers.join(","),
-            ...filteredTrips.map(trip => `"${trip.id}","${trip.vessel}","${trip.start}","${trip.end}","${trip.distance}","${trip.duration}","${trip.date}","${trip.status}"`)
+            ...filteredTrips.map(trip => `"#${trip.sequenceId?.toString().padStart(2, '0')}","${trip.vessel?.name}","${new Date(trip.startTime).toLocaleDateString()}","${trip.status}"`)
         ].join("\n");
 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -107,42 +171,20 @@ export default function TripHistoryPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredTrips.length > 0 ? filteredTrips.map((trip) => (
-                                <tr key={trip.id} onClick={() => router.push(`/trips/${trip.id}`)} className="hover:bg-slate-50 transition-colors border-b border-slate-50 group cursor-pointer">
-                                    <td className="px-6 py-5 text-[14px] font-bold text-blue-600">{trip.id.slice(0, 8)}...</td>
-                                    <td className="px-6 py-5">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors"><Ship size={14} /></div>
-                                            <span className="text-[14px] font-bold text-slate-900">{trip.vessel?.name || 'Unknown Vessel'}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <div className="flex items-center gap-3 text-[14px] font-semibold text-slate-700">
-                                            <span>Start Location Untracked</span>
-                                            <ArrowRight size={14} className="text-slate-400" />
-                                            <span>{trip.status === 'ACTIVE' ? 'Ongoing' : 'Completed'}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <div className="flex flex-col gap-1">
-                                            <span className="text-[13px] font-bold text-slate-800 flex items-center gap-1.5"><MapPin size={12} className="text-slate-400"/> -- nm</span>
-                                            <span className="text-[13px] font-medium text-slate-500 flex items-center gap-1.5"><Clock size={12} className="text-slate-400"/> -- h -- m</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-5 text-[14px] font-medium text-slate-600">
-                                        {new Date(trip.startTime).toLocaleDateString()}
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <span className={`px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-widest border ${
-                                            trip.status === 'ACTIVE' 
-                                                ? 'bg-blue-50 text-blue-600 border-blue-100' 
-                                                : 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                        }`}>
-                                            {trip.status}
-                                        </span>
-                                    </td>
-                                </tr>
-                            )) : (
+                                {filteredTrips.length > 0 ? filteredTrips.map((trip) => {
+                                    const displayId = trip.sequenceId 
+                                        ? trip.sequenceId.toString().padStart(2, '0') 
+                                        : trip.id.substring(0, 6).toUpperCase();
+                                    
+                                    return (
+                                        <TripRow 
+                                            key={trip.id} 
+                                            trip={trip} 
+                                            sequenceId={displayId} 
+                                            onClick={() => router.push(`/trips/${trip.id}`)} 
+                                        />
+                                    );
+                                }) : (
                                 <tr>
                                     <td colSpan={6} className="px-6 py-12 text-center text-slate-500 font-medium">
                                         {loading ? "Loading Trips..." : "No trips matched your search."}

@@ -50,30 +50,14 @@ export class UsersService {
     }
 
     async getProfile() {
-        // For the passwordless admin dashboard, just get the first created active user
-        let user = await this.prisma.user.findFirst({
+        const user = await this.prisma.user.findFirst({
             where: { deletedAt: null },
             include: { role: true },
             orderBy: { createdAt: 'asc' }
         });
 
-        // Auto-seed admin if database is completely empty so 404 failsafes don't trip
         if (!user) {
-            let role = await this.prisma.role.findFirst({ where: { name: 'Admin' } });
-            if (!role) {
-                role = await this.prisma.role.create({ data: { name: 'Admin' } });
-            }
-            const bcrypt = require('bcrypt');
-            user = await this.prisma.user.create({
-                data: {
-                    email: 'admin@seasense.com',
-                    password: await bcrypt.hash('password', 10),
-                    firstName: 'Danang',
-                    lastName: 'Calvin',
-                    roleId: role.id
-                },
-                include: { role: true }
-            });
+            throw new NotFoundException('No active users found in the system');
         }
         
         return user;

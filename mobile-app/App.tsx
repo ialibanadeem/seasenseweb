@@ -33,6 +33,8 @@ export default function App() {
   const [vesselId, setVesselId] = useState<string | null>(null);
   const [vesselName, setVesselName] = useState("Vessel Loading...");
   const [isCloudflareSynced, setIsCloudflareSynced] = useState(false);
+  const [satellites, setSatellites] = useState<number | null>(null);
+  const [altitude, setAltitude] = useState<number | null>(null);
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const tripIdRef = useRef<string | null>(null);
@@ -40,6 +42,57 @@ export default function App() {
   const mapRef = useRef<MapView | null>(null);
   const esp32IntervalRef = useRef<NodeJS.Timeout | null>(null);
   const pollerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastCenterCoords = useRef<{latitude: number, longitude: number} | null>(null);
+  
+  const [isTripLoading, setIsTripLoading] = useState(false);
+
+  // Manual Trip Control Functions
+  const handleStartTrip = async () => {
+    if (!vesselId) {
+      alert("Error: Vessel not loaded yet.");
+      return;
+    }
+    
+    setIsTripLoading(true);
+    try {
+      console.log(`🚀 Starting trip for vessel ${vesselId}...`);
+      const response = await api.post(`/trips/${vesselId}/start`, {
+        startTime: new Date().toISOString()
+      });
+      
+      const newTripId = response.data.id;
+      setTripId(newTripId);
+      tripIdRef.current = newTripId;
+      console.log(`✅ Trip started: ${newTripId}`);
+    } catch (error) {
+      console.error("❌ Failed to start trip:", error);
+      alert("Failed to start trip. Check server connection.");
+    } finally {
+      setIsTripLoading(false);
+    }
+  };
+
+  const handleEndTrip = async () => {
+    if (!tripId) return;
+    
+    setIsTripLoading(true);
+    try {
+      console.log(`🏁 Ending trip ${tripId}...`);
+      await api.post(`/trips/${tripId}/end`, {
+        endTime: new Date().toISOString()
+      });
+      
+      setTripId(null);
+      tripIdRef.current = null;
+      console.log(`✅ Trip ended successfully`);
+    } catch (error) {
+      console.error("❌ Failed to end trip:", error);
+      alert("Failed to end trip.");
+    } finally {
+      setIsTripLoading(false);
+    }
+  };
+
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -60,6 +113,18 @@ export default function App() {
       } catch (err) {
         console.warn("Failed to fetch vessels, defaulting to hardware mode");
       }
+      // 3. User Location Watcher (Manual)
+      const sub = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.High,
+          distanceInterval: 5,
+          timeInterval: 5000,
+        },
+        (loc) => {
+          setUserLocation(loc.coords);
+        }
+      );
+      subscriptionRef.current = sub;
     })();
 
     // 1. DIRECT CLOUDFLARE POLLING (New Priority)
@@ -99,12 +164,21 @@ export default function App() {
 
     socket.on("vessel_live_update", (data: any) => {
       // Keep socket as backup/sync, but direct poller is faster
-      if (!vesselId || data.vesselId === vesselId || data.vesselId === 'ESP32-HARDWARE' || data.vesselId === '987654321') {
+      if (!vesselId || data.vesselId === vesselId || data.mmsi === '987654321') {
+        const tid = (data.tripId && !data.tripId.includes('live')) ? data.tripId : null;
+        if (tid !== tripIdRef.current) {
+          setTripId(tid);
+          if (!tid) setRouteHistory([]); // Clear breadcrumbs when trip ends
+        }
+
         updateVesselLocation({
           latitude: data.location.lat,
           longitude: data.location.lng,
-          speed: data.speed,
-          heading: data.heading
+          speed: data.speed, 
+          heading: data.heading,
+          altitude: data.altitude,
+          satellites: data.satellites,
+          isBackendKnots: true 
         } as any);
       }
     });
@@ -122,12 +196,17 @@ export default function App() {
     tripIdRef.current = tripId;
   }, [tripId]);
 
-  const updateVesselLocation = (coords: { latitude: number, longitude: number, speed?: number | null, heading?: number | null }) => {
-    const { latitude, longitude, speed: s, heading: h } = coords;
+  const updateVesselLocation = (coords: { latitude: number, longitude: number, speed?: number | null, heading?: number | null, isBackendKnots?: boolean }) => {
+    const { latitude, longitude, speed: s, heading: h, isBackendKnots } = coords;
 
     setVesselLocation(coords as any);
-    // Hardware sends Speed in KM/H. Conversion to KNOTS is ~0.539957
-    setSpeed(s ? Math.round(s * 0.539957 * 10) / 10 : 0);
+    if (coords.satellites !== undefined) setSatellites(coords.satellites);
+    if (coords.altitude !== undefined) setAltitude(coords.altitude);
+    
+    // If telemetry is from backend socket, speed is already in knots.
+    // Otherwise (direct poll), it is in KM/H and needs conversion.
+    const speedKnotsValue = isBackendKnots ? (s || 0) : (s ? s * 0.539957 : 0);
+    setSpeed(Math.round(speedKnotsValue * 10) / 10);
     setHeading(h ? Math.round(h) : 0);
     setIsCloudflareSynced(true);
 
@@ -142,94 +221,25 @@ export default function App() {
     // the Cloudflare link as the single source of truth bridge.
     // socket.emit("location_update", { ... });
 
-    // Follow movement on map for vessel ONLY
+    // Follow movement on map for vessel ONLY if it moves significantly
     if (mapRef.current) {
-      mapRef.current.animateToRegion({
-        latitude,
-        longitude,
-        latitudeDelta: 0.005,
-        longitudeDelta: 0.005,
-      }, 1000);
-    }
-  };
-
-  const startLocationWatcher = async () => {
-    // 1. PHONE LOCATION WATCHER
-    const sub = await Location.watchPositionAsync(
-      {
-        accuracy: Location.Accuracy.High,
-        distanceInterval: 5,
-        timeInterval: 5000,
-      },
-      (loc) => {
-        // ONLY update user's phone position, NOT the vessel
-        setUserLocation(loc.coords);
-      }
-    );
-    subscriptionRef.current = sub;
-
-    // 2. BACKEND TELEMETRY LISTENER
-    // Listen for data pushed from the backend (originally from ESP32)
-    socket.on("vessel_live_update", (data: any) => {
-      if (!vesselId || data.vesselId === vesselId || data.vesselId === 'ESP32-HARDWARE' || data.vesselId === '987654321') {
-        console.log("🛰️ Received telemetry from backend:", data);
-        updateVesselLocation({
-          latitude: data.location.lat,
-          longitude: data.location.lng,
-          speed: data.speed,
-          heading: data.heading
-        } as any);
-      }
-    });
-
-    // 3. (REMOVED) DIRECT ESP32 POLLING
-    // We now rely on the backend sync bridge for a single source of truth.
-  };
-
-  const toggleTrip = async () => {
-    if (!vesselId) {
-      console.warn("Vessel not yet identified. Cannot start trip.");
-      return;
-    }
-
-    if (!tripId) {
-      try {
-        const response = await api.post(`/trips/${vesselId}/start`, {
-          startTime: new Date().toISOString()
-        });
-        const id = response.data.id;
-        setTripId(id);
-        socket.connect();
-        await startLocationWatcher();
-      } catch (error: any) {
-        if (error.response?.status === 400) {
-          const historyResponse = await api.get(`/trips/history/${vesselId}`);
-          const activeTrip = historyResponse.data.find((t: any) => t.status === "ACTIVE");
-          if (activeTrip) {
-            setTripId(activeTrip.id);
-            socket.connect();
-            await startLocationWatcher();
-          }
-        }
-      }
-    } else {
-      try {
-        await api.post(`/trips/${tripId}/end`, {
-          endTime: new Date().toISOString()
-        });
-        socket.disconnect();
-        if (subscriptionRef.current) {
-          subscriptionRef.current.remove();
-          subscriptionRef.current = null;
-        }
-        Esp32Service.stopPolling();
-        setTripId(null);
-        setRouteHistory([]); // Clear trail on end
-      } catch (error) {
-        console.error("End trip error:", error);
+      const latDiff = lastCenterCoords.current ? Math.abs(latitude - lastCenterCoords.current.latitude) : 1;
+      const lngDiff = lastCenterCoords.current ? Math.abs(longitude - lastCenterCoords.current.longitude) : 1;
+      
+      // Threshold: ~0.0001 degrees (~10 meters)
+      if (latDiff > 0.0001 || lngDiff > 0.0001) {
+        mapRef.current.animateToRegion({
+          latitude,
+          longitude,
+          latitudeDelta: 0.005,
+          longitudeDelta: 0.005,
+        }, 1000);
+        lastCenterCoords.current = { latitude, longitude };
       }
     }
   };
+
+
 
   const mapRegion = vesselLocation ? {
     latitude: vesselLocation.latitude,
@@ -319,21 +329,33 @@ export default function App() {
           </View>
 
           {/* Live Coordinates */}
-          <View style={styles.coordBox}>
-            <View style={styles.coordHeader}>
-              <MapPin size={12} color={theme.colors.accent} />
-              <Text style={styles.coordLabel}>VESSEL POSITION</Text>
+          {vesselLocation && (
+            <View style={styles.coordBox}>
+              <View style={styles.coordHeader}>
+                <Navigation size={12} color={theme.colors.accent} />
+                <Text style={styles.coordLabel}>Vessel Coords</Text>
+              </View>
+              <Text style={styles.coordValue}>{vesselLocation.latitude.toFixed(5)}°N</Text>
+              <Text style={styles.coordValue}>{vesselLocation.longitude.toFixed(5)}°E</Text>
+              
+              <View style={styles.metricsRow}>
+                <View style={styles.metricItem}>
+                  <Zap size={10} color={theme.colors.muted} />
+                  <Text style={styles.coordLabel}>{satellites ?? 0} SATS</Text>
+                </View>
+                <View style={styles.metricItem}>
+                  <Activity size={10} color={theme.colors.muted} />
+                  <Text style={styles.coordLabel}>{altitude ?? 0}m</Text>
+                </View>
+              </View>
             </View>
-            <Text style={styles.coordValue}>
-              {vesselLocation ? `${vesselLocation.latitude.toFixed(4)}°N, ${vesselLocation.longitude.toFixed(4)}°E` : 'Waiting for Telemetry...'}
-            </Text>
-          </View>
+          )}
 
           {/* SOS Button */}
           <View style={styles.sosContainer}>
             <SOSButton
               location={vesselLocation || userLocation || { latitude: 0, longitude: 0 }}
-              vesselId={vesselId || 'ESP32-HARDWARE'}
+              vesselId={vesselId || 'Shaheen'}
               tripId={tripId}
             />
           </View>
@@ -358,14 +380,27 @@ export default function App() {
               </View>
             </View>
 
-            <TouchableOpacity
-              style={[styles.bigButton, tripId ? styles.endButton : styles.startButton]}
-              onPress={toggleTrip}
-            >
-              <Text style={styles.bigButtonText}>
-                {tripId ? "END TRIP" : "START NEW TRIP"}
+            <View style={styles.autoStatusBox}>
+              <TouchableOpacity 
+                style={[
+                  styles.tripButton, 
+                  { backgroundColor: tripId ? '#f87171' : '#4ade80' },
+                  isTripLoading && { opacity: 0.7 }
+                ]}
+                onPress={tripId ? handleEndTrip : handleStartTrip}
+                disabled={isTripLoading}
+              >
+                <Text style={styles.tripButtonText}>
+                  {isTripLoading ? "PROCESSING..." : (tripId ? "FINISH CURRENT TRIP" : "START NEW TRIP")}
+                </Text>
+              </TouchableOpacity>
+              <Text style={styles.statusDescription}>
+                {tripId 
+                  ? "Tracking Active: Every move is being recorded to the SeaSense cloud." 
+                  : "Vessel at Anchor: Tap 'Start' to begin tracking your journey."
+                }
               </Text>
-            </TouchableOpacity>
+            </View>
           </View>
         </View>
       </SafeAreaView>
@@ -428,7 +463,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: '#3b82f6', // Bright blue for user
     borderWidth: 2,
-    borderColor: '#fff',
+    marginRight: 8,
   },
   coordBox: {
     position: 'absolute',
@@ -436,25 +471,41 @@ const styles = StyleSheet.create({
     left: 16,
     backgroundColor: 'rgba(26, 26, 26, 0.85)',
     borderRadius: theme.roundness.md,
-    padding: 8,
+    padding: 10,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
+    minWidth: 120,
   },
   coordHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    marginBottom: 4,
   },
   coordLabel: {
     fontSize: 9,
     color: theme.colors.muted,
     fontWeight: 'bold',
+    textTransform: 'uppercase',
   },
   coordValue: {
-    fontSize: 11,
+    fontSize: 12,
     color: theme.colors.text,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    marginTop: 2,
+  },
+  metricsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+    paddingTop: 6,
+    gap: 12,
+  },
+  metricItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   sosContainer: {
     position: 'absolute',
@@ -506,25 +557,54 @@ const styles = StyleSheet.create({
   routeSeparator: {
     color: theme.colors.muted,
   },
-  bigButton: {
+  autoStatusBox: {
     width: '100%',
-    paddingVertical: 18,
+    padding: 16,
     borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    gap: 8,
+  },
+  statusHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statusLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: 0.5,
+  },
+  statusDescription: {
+    fontSize: 12,
+    color: theme.colors.muted,
+    lineHeight: 18,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  tripButton: {
+    width: '100%',
+    height: 52,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  startButton: {
-    backgroundColor: theme.colors.accent,
-  },
-  endButton: {
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  bigButtonText: {
-    color: theme.colors.text,
+  tripButtonText: {
+    color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '900',
     letterSpacing: 1,
   },
   simulateButton: {

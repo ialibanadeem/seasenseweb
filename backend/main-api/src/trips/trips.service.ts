@@ -46,9 +46,40 @@ export class TripsService {
     }
 
     async findAll() {
-        return this.prisma.trip.findMany({
+        const trips = await this.prisma.trip.findMany({
             include: { vessel: true },
             orderBy: { createdAt: 'desc' },
         });
+
+        return Promise.all(trips.map(async (trip) => {
+            const [firstPoint, lastPoint] = await Promise.all([
+                this.prisma.locationPoint.findFirst({
+                    where: { tripId: trip.id },
+                    orderBy: { timestamp: 'asc' },
+                }),
+                this.prisma.locationPoint.findFirst({
+                    where: { tripId: trip.id },
+                    orderBy: { timestamp: 'desc' },
+                }),
+            ]);
+            
+            return {
+                ...(trip as any), // Use as any to avoid type issues and ensure all Prisma fields are included
+                startPoint: firstPoint || null,
+                endPoint: lastPoint || null
+            };
+        }));
+    }
+
+    async findOne(id: string) {
+        const trip = await this.prisma.trip.findUnique({
+            where: { id },
+            include: {
+                vessel: true,
+                points: { orderBy: { timestamp: 'asc' } },
+            },
+        });
+        if (!trip) throw new NotFoundException('Trip not found');
+        return trip;
     }
 }

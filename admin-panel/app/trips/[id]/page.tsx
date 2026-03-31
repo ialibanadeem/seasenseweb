@@ -10,46 +10,62 @@ export default function TripDetailsPage() {
     const params = useParams();
     const id = params.id as string;
 
-    // Rich mock data explicitly tied to the selected trip ID
-    const tripDetails = {
-        id: id,
-        vessel: 'Al-Mehran',
-        status: 'Completed',
-        startTime: 'Oct 24, 2023, 10:00 AM',
-        endTime: 'Oct 24, 2023, 12:20 PM',
-        startPort: 'Karachi Port',
-        endPort: 'Port Qasim',
-        metrics: {
-            distance: '12.5 nm',
-            duration: '2h 20m',
-            avgSpeed: '12.4 kts',
-            maxSpeed: '18.5 kts',
-            fuelUsed: '145 L',
-            efficiency: '92%'
-        }
-    };
+    const [data, setData] = React.useState<any>(null);
+    const [loading, setLoading] = React.useState(true);
 
-    const speedData = [
-        { time: '10:00', speed: 0 },
-        { time: '10:15', speed: 8.5 },
-        { time: '10:30', speed: 12.0 },
-        { time: '10:45', speed: 14.2 },
-        { time: '11:00', speed: 18.5 },
-        { time: '11:15', speed: 16.0 },
-        { time: '11:30', speed: 12.4 },
-        { time: '11:45', speed: 10.1 },
-        { time: '12:00', speed: 5.5 },
-        { time: '12:15', speed: 2.0 },
-        { time: '12:20', speed: 0 },
-    ];
+    React.useEffect(() => {
+        const fetchTrip = async () => {
+            try {
+                const apiURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3005';
+                const res = await fetch(`${apiURL}/trips/${id}`);
+                const trip = await res.json();
+                
+                // Map API data to UI structure
+                const details = {
+                    id: trip.id,
+                    vessel: trip.vessel?.name || 'Unknown Vessel',
+                    status: trip.status,
+                    startTime: trip.startTime ? new Date(trip.startTime).toLocaleString() : 'N/A',
+                    endTime: trip.endTime ? new Date(trip.endTime).toLocaleString() : 'In Progress',
+                    startPort: 'Origin', // Placeholder label for now as schema doesn't have ports
+                    endPort: 'Destination',
+                    metrics: {
+                        distance: `${(trip.distance || 0).toFixed(1)} nm`,
+                        duration: trip.startTime && trip.endTime 
+                            ? `${Math.round((new Date(trip.endTime).getTime() - new Date(trip.startTime).getTime()) / 60000)}m`
+                            : 'Active',
+                        avgSpeed: `${(trip.avgSpeed || 0).toFixed(1)} kts`,
+                        maxSpeed: `${Math.max(...(trip.points?.map((p: any) => p.speed) || [0])).toFixed(1)} kts`,
+                        fuelUsed: 'N/A',
+                        efficiency: 'N/A'
+                    }
+                };
 
-    const timeline = [
-        { time: '10:00 AM', event: 'Departed Karachi Port', type: 'departure' },
-        { time: '10:45 AM', event: 'Entering open waters', type: 'navigation' },
-        { time: '11:00 AM', event: 'Reached maximum speed (18.5 kts)', type: 'speed' },
-        { time: '12:00 PM', event: 'Approaching Port Qasim channel', type: 'navigation' },
-        { time: '12:20 PM', event: 'Arrived at destination', type: 'arrival' },
-    ];
+                const speed = (trip.points || []).map((p: any) => ({
+                    time: new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    speed: p.speed || 0
+                }));
+
+                const logs = (trip.points || []).slice(-10).map((p: any) => ({
+                    time: new Date(p.timestamp).toLocaleTimeString(),
+                    event: `Position update: ${p.latitude.toFixed(4)}, ${p.longitude.toFixed(4)}`,
+                    type: 'navigation'
+                }));
+
+                setData({ details, speed, logs });
+            } catch (err) {
+                console.error("Failed to fetch trip details:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchTrip();
+    }, [id]);
+
+    if (loading) return <div className="flex-1 flex items-center justify-center bg-slate-50 text-slate-400 font-bold">Loading Voyage data...</div>;
+    if (!data) return <div className="flex-1 flex items-center justify-center bg-slate-50 text-slate-400 font-bold">Trip not found</div>;
+
+    const { details: tripDetails, speed: speedData, logs: timeline } = data;
 
     return (
         <div className="flex-1 overflow-y-auto bg-slate-50 flex flex-col">

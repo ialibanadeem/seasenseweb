@@ -59,6 +59,7 @@ model Vessel {
 
 model Trip {
   id        String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  sequenceId Int                 @unique @default(autoincrement())
   vesselId  String              @db.Uuid
   status    TripStatus          @default(PLANNED)
   startTime DateTime?
@@ -84,6 +85,8 @@ model LocationPoint {
   longitude Float
   speed     Float?
   heading   Float?
+  altitude  Float?
+  satellites Int?
   timestamp DateTime                 @default(now())
   geom      Unsupported("geometry")?
   trip      Trip                     @relation(fields: [tripId], references: [id])
