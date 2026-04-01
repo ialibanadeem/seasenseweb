@@ -103,7 +103,7 @@ export default function VesselAnalyticsDashboard() {
                     <div className="w-px h-8 bg-slate-200"></div>
                     <div className="flex flex-col items-end">
                         <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Location</span>
-                        <span className="text-[14px] font-bold text-slate-800">{liveInfo?.coordinates?.length >= 2 ? `${liveInfo.coordinates[1].toFixed(4)}, ${liveInfo.coordinates[0].toFixed(4)}` : '--'}</span>
+                        <span className="text-[14px] font-bold text-slate-800">{(liveInfo && liveInfo.coordinates && liveInfo.coordinates.length >= 2) ? `${liveInfo.coordinates[1].toFixed(4)}, ${liveInfo.coordinates[0].toFixed(4)}` : '--'}</span>
                     </div>
                 </div>
             </div>
