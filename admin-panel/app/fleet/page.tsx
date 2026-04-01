@@ -10,9 +10,9 @@ export default function FleetMasterPage() {
     const vesselList = Object.values(vessels);
 
     const getStatusColor = (status: string) => {
-        if (status === 'active') return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-        if (status === 'idle') return 'bg-amber-100 text-amber-700 border-amber-200';
-        return 'bg-slate-100 text-slate-700 border-slate-200';
+        if (status === 'ACTIVE') return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+        if (status === 'MAINTENANCE') return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+        return 'bg-slate-100 text-slate-700 border-slate-200'; // Covers 'INACTIVE'
     };
 
     return (

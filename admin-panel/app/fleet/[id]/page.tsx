@@ -80,7 +80,15 @@ export default function VesselAnalyticsDashboard() {
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
                             {vessel.name}
-                            <span className={`px-2 py-1 rounded-md text-[10px] uppercase tracking-widest font-bold ${vessel.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                            <span 
+                                className={`px-2 py-1 rounded-md text-[10px] uppercase tracking-widest font-bold ${
+                                    vessel.status === 'ACTIVE' 
+                                        ? 'bg-emerald-100 text-emerald-700' 
+                                        : vessel.status === 'MAINTENANCE' 
+                                        ? 'bg-yellow-100 text-yellow-700' 
+                                        : 'bg-slate-100 text-slate-600'
+                                }`}
+                            >
                                 {vessel.status}
                             </span>
                         </h1>
