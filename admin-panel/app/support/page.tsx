@@ -6,7 +6,7 @@ import { HelpCircle, Search, MessageSquare, Book, FileText, ChevronRight } from 
 export default function SupportPage() {
     return (
         <div className="flex w-full h-full p-8 gap-8 bg-[#fafbfc]">
-            <div className="flex-1 flex flex-col max-w-[1000px] w-full mx-auto">
+            <div className="flex-1 flex flex-col max-w-[1000px] w-full mx-auto px-4 md:px-0">
                 <div className="flex flex-col items-center mb-12 text-center mt-8">
                     <h1 className="text-4xl font-bold text-slate-900 tracking-tight mb-4">How can we help you today?</h1>
                     <div className="bg-white rounded-full flex items-center px-6 h-14 shadow-md border border-slate-100 w-full max-w-2xl">

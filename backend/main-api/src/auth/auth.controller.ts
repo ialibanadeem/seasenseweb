@@ -10,13 +10,28 @@ export class AuthController {
         return this.authService.signup(signUpDto);
     }
 
+    @Post('verify-email')
+    async verifyEmail(@Body() body: { email: string; otp: string }) {
+        return this.authService.verifyEmail(body.email, body.otp);
+    }
+
     @Post('login')
     @HttpCode(HttpStatus.OK)
     async login(@Body() loginDto: any) {
+        // Validation now perfectly throws NotFound or Unauthorized natively in service.
         const user = await this.authService.validateUser(loginDto.email, loginDto.password);
-        if (!user) {
-            throw new UnauthorizedException('Invalid credentials');
-        }
-        return this.authService.login(user);
+        return this.authService.login(user); 
+    }
+
+    @Post('forgot-password')
+    @HttpCode(HttpStatus.OK)
+    async forgotPassword(@Body() body: { email: string }) {
+        return this.authService.forgotPassword(body.email);
+    }
+
+    @Post('reset-password')
+    @HttpCode(HttpStatus.OK)
+    async resetPassword(@Body() body: { email: string; otp: string; newPassword: string }) {
+        return this.authService.resetPassword(body.email, body.otp, body.newPassword);
     }
 }

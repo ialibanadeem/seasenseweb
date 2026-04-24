@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { CalendarDays, TrendingUp, TrendingDown, Filter, Check, Box, Ship, Activity, Clock, WifiOff, Route, Zap, BarChart4, AlertTriangle, Map } from 'lucide-react';
+import { CalendarDays, TrendingUp, TrendingDown, Filter, Check, Box, Ship, Activity, Clock, WifiOff, Route, Zap, BarChart4, AlertTriangle, Map, Info } from 'lucide-react';
 import { useVesselStore } from '../store/useVesselStore';
 import { useTrackingSocket } from '../hooks/useTrackingSocket';
 import dynamic from 'next/dynamic';
@@ -10,6 +10,16 @@ const DashboardMap = dynamic(() => import('../components/dashboard/DashboardMap'
     ssr: false,
     loading: () => <div className="w-full h-full flex items-center justify-center text-slate-400 font-medium">Loading Live Map...</div>
 });
+
+const InfoTooltip = ({ text }: { text: string }) => (
+    <div className="relative group flex items-center">
+        <Info size={14} className="text-slate-400 hover:text-blue-500 cursor-help transition-colors" />
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden group-hover:block w-max max-w-[220px] p-2.5 bg-slate-800 text-white text-[11px] font-medium leading-relaxed rounded-xl shadow-xl z-50 text-center pointer-events-none normal-case tracking-normal">
+            {text}
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-slate-800"></div>
+        </div>
+    </div>
+);
 
 export default function DashboardHome() {
     // Initialize Socket Connection
@@ -50,12 +60,19 @@ export default function DashboardHome() {
     const currentPositions = Object.values(livePositions);
     
     currentPositions.forEach(pos => {
-        if (pos.status === 'OFFLINE') {
+        const lastUpdated = new Date(pos.timestamp || pos.lastSeen || Date.now());
+        const timeDiff = (Date.now() - lastUpdated.getTime()) / 1000 / 60; // in minutes
+        
+        const isOffline = timeDiff > 5 || pos.status === 'OFFLINE';
+        
+        if (isOffline) {
             offlineCount++;
+        } else if (pos.speed === 0 || pos.speed <= 2) {
+            idleCount++;
         } else if (pos.speed > 2 || pos.status === 'MOVING' || pos.status === 'ACTIVE') {
             activeCount++;
         } else {
-            idleCount++;
+            idleCount++; 
         }
     });
 
@@ -78,34 +95,39 @@ export default function DashboardHome() {
                     {/* Top Left: Header & Metrics Strip */}
                     <div className="flex flex-col gap-4 max-w-[800px] w-full pointer-events-none">
                         
-                        {/* Header Glass Card iOS Style */}
-                        <div className="bg-white/80 backdrop-blur-2xl px-8 py-6 rounded-[32px] border border-white/40 shadow-[0_20px_50px_rgba(0,0,0,0.05)] flex justify-between items-center transition-all pointer-events-auto">
-                            <div>
-                                <h1 className="text-[26px] font-bold text-slate-900 flex items-center gap-3 tracking-tight">
-                                    Live Fleet Overview
-                                </h1>
-                                <p className={`text-[14px] font-medium text-slate-500 mt-1 flex items-center gap-3`}>
-                                    Real-time tracking and metrics.
-                                    <span className={`flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold px-3 py-1 rounded-full border ${isConnected ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-rose-50 border-rose-200 text-rose-600'}`}>
-                                        <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></span>
-                                        {isConnected ? 'Server Sync Active' : 'Disconnected'}
-                                    </span>
-                                </p>
+                        {/* Minimalistic Header - Premium & Compact */}
+                        <div className="bg-white/70 backdrop-blur-xl px-6 py-4 rounded-[24px] border border-white/50 shadow-[0_10px_30px_rgba(0,0,0,0.03)] flex items-center justify-between transition-all pointer-events-auto max-w-fit">
+                            <div className="flex items-center gap-5">
+                                <div className="w-1.5 h-10 bg-blue-600 rounded-full shadow-[0_0_15px_rgba(37,99,235,0.3)]" />
+                                <div>
+                                    <div className="flex items-center gap-3">
+                                        <h1 className="text-[20px] font-black text-slate-900 tracking-tighter uppercase">
+                                            Fleet Overview
+                                        </h1>
+                                        <div className={`flex items-center gap-1.5 text-[9px] uppercase tracking-[0.1em] font-black px-2 py-0.5 rounded-lg border ${isConnected ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-rose-50 border-rose-100 text-rose-600'} transition-all`}>
+                                            <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></span>
+                                            {isConnected ? 'Synced' : 'Offline'}
+                                        </div>
+                                    </div>
+                                    <p className="text-[12px] font-bold text-slate-400 tracking-tight leading-none mt-1">
+                                        Active Maritime Telemetry
+                                    </p>
+                                </div>
                             </div>
                         </div>
 
                         {/* Simplified KPI Vertical Stack - Matching Live Activity Style */}
-                        <div className="w-[300px] flex flex-col bg-white/70 backdrop-blur-3xl rounded-[32px] border border-white/50 shadow-[0_20px_50px_rgba(0,0,0,0.06)] overflow-hidden shrink-0 pointer-events-auto">
-                            <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3 bg-slate-50/50">
+                        <div className="w-[300px] flex flex-col bg-white/70 backdrop-blur-3xl rounded-[32px] border border-white/50 shadow-[0_20px_50px_rgba(0,0,0,0.06)] shrink-0 pointer-events-auto">
+                            <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3 bg-slate-50/50 rounded-t-[32px]">
                                 <Activity size={18} className="text-blue-500" />
                                 <h2 className="text-[15px] font-bold text-slate-800 tracking-tight">Fleet Status</h2>
                             </div>
                             
                             <div className="p-6 flex flex-col gap-6">
-                                <KPIItem label="Total Vessels" value={totalVesselsCount} icon={<Ship size={14} />} color="text-blue-600" bgColor="bg-blue-50" />
-                                <KPIItem label="Active (Moving)" value={activeCount} icon={<Zap size={14} />} color="text-emerald-600" bgColor="bg-emerald-50" />
-                                <KPIItem label="Idle / Anchored" value={idleCount} icon={<Clock size={14} />} color="text-amber-600" bgColor="bg-amber-50" />
-                                <KPIItem label="Offline" value={offlineCount} icon={<WifiOff size={14} />} color="text-rose-600" bgColor="bg-rose-50" />
+                                <KPIItem label="Total Vessels" value={totalVesselsCount} icon={<Ship size={14} />} color="text-blue-600" bgColor="bg-blue-50" tooltip="The total number of vessels currently registered in the system." />
+                                <KPIItem label="Active (Moving)" value={activeCount} icon={<Zap size={14} />} color="text-emerald-600" bgColor="bg-emerald-50" tooltip="Vessels currently moving at a speed greater than 2 knots." />
+                                <KPIItem label="Idle / Anchored" value={idleCount} icon={<Clock size={14} />} color="text-amber-600" bgColor="bg-amber-50" tooltip="Vessels that are stationary or moving very slowly (under 2 knots)." />
+                                <KPIItem label="Offline" value={offlineCount} icon={<WifiOff size={14} />} color="text-rose-600" bgColor="bg-rose-50" tooltip="Vessels that have not sent a GPS signal in over 5 minutes." />
                             </div>
                         </div>
                     </div>
@@ -152,14 +174,17 @@ export default function DashboardHome() {
 
 // Subcomponents
 
-function KPIItem({ label, value, icon, color, bgColor }: any) {
+function KPIItem({ label, value, icon, color, bgColor, tooltip }: any) {
     return (
         <div className="flex items-center justify-between group cursor-pointer">
             <div className="flex items-center gap-4">
                 <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${color} ${bgColor} border border-transparent transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg`}>
                     {icon}
                 </div>
-                <span className="text-[13px] font-bold text-slate-500 group-hover:text-slate-900 transition-colors uppercase tracking-widest">{label}</span>
+                <div className="flex items-center gap-2">
+                    <span className="text-[13px] font-bold text-slate-500 group-hover:text-slate-900 transition-colors uppercase tracking-widest">{label}</span>
+                    {tooltip && <InfoTooltip text={tooltip} />}
+                </div>
             </div>
             <span className="text-[24px] font-black text-slate-900 tracking-tighter">{value}</span>
         </div>

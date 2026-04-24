@@ -24,6 +24,7 @@ model User {
   firstName      String?
   lastName       String?
   roleId         String              @db.Uuid
+  isVerified     Boolean             @default(false)
   deletedAt      DateTime?
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
@@ -48,6 +49,9 @@ model Vessel {
   deletedAt  DateTime?
   createdAt  DateTime           @default(now())
   updatedAt  DateTime           @updatedAt
+  lastSeen   DateTime?
+  lastRegion String?
+  lastLatLng Json?
   activities ActivityTimeline[]
   alerts     Alert[]
   gpsLogs    GpsLog[]
@@ -67,6 +71,7 @@ model Trip {
   deletedAt DateTime?
   createdAt DateTime            @default(now())
   updatedAt DateTime            @updatedAt
+  startLatLng Json?
   avgSpeed  Float?              @default(0)
   distance  Float?              @default(0)
   alerts    Alert[]

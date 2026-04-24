@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../common/prisma.service';
 import { Trip, Prisma } from '@prisma/client';
 
+import { TripFilterDto } from './dto/trip-filter.dto';
+
 @Injectable()
 export class TripsService {
     constructor(private prisma: PrismaService) { }
@@ -45,8 +47,43 @@ export class TripsService {
         });
     }
 
-    async findAll() {
+    async findAll(query?: TripFilterDto) {
+        const where: Prisma.TripWhereInput = {
+            deletedAt: null,
+        };
+
+        if (query) {
+            const { startDate, endDate, month, year, vesselId } = query;
+
+            if (vesselId) {
+                where.vesselId = vesselId;
+            }
+
+            if (startDate || endDate) {
+                where.startTime = {
+                    ...(startDate && { gte: new Date(startDate) }),
+                    ...(endDate && { lte: (() => {
+                        const d = new Date(endDate);
+                        d.setUTCHours(23, 59, 59, 999);
+                        return d;
+                    })() }),
+                };
+            } else if (month) {
+                const filterYear = year || new Date().getFullYear();
+                where.startTime = {
+                    gte: new Date(Date.UTC(filterYear, month - 1, 1, 0, 0, 0, 0)),
+                    lte: new Date(Date.UTC(filterYear, month, 0, 23, 59, 59, 999)),
+                };
+            } else if (year) {
+                where.startTime = {
+                    gte: new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0)),
+                    lte: new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999)),
+                };
+            }
+        }
+
         const trips = await this.prisma.trip.findMany({
+            where,
             include: { vessel: true },
             orderBy: { createdAt: 'desc' },
         });

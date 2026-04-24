@@ -36,12 +36,12 @@ export const TrackingMap = ({ className }: TrackingMapProps) => {
         console.log("📍 TrackingMap: Initializing with API Key:", apiKey.substring(0, 5) + "...");
 
         try {
-            const styleUrl = `https://api.maptiler.com/maps/dataviz-light/style.json?key=${apiKey}`;
+            const styleUrl = `https://api.maptiler.com/maps/streets-v2/style.json?key=${apiKey}`;
             console.log("🗺️ TrackingMap: Using Style URL:", styleUrl);
 
             map.current = new maptilersdk.Map({
                 container: mapContainer.current,
-                style: 'dataviz-light',
+                style: 'streets-v2',
                 center: [67.0011, 24.8607],
                 zoom: 2,
                 navigationControl: true,
@@ -97,6 +97,7 @@ export const TrackingMap = ({ className }: TrackingMapProps) => {
                 console.log("🧹 TrackingMap: Cleaning up");
                 map.current.remove();
                 map.current = null;
+                markers.current = {};
             }
         };
     }, []);

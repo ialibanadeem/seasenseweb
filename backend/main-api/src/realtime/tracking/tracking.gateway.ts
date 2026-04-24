@@ -11,6 +11,9 @@ import { Server, Socket } from 'socket.io';
 import { UsePipes, ValidationPipe, Logger } from '@nestjs/common';
 import { TrackingEvents, LocationUpdatePayload, SosTriggerPayload } from '../interfaces/tracking.interface';
 import { JwtService } from '@nestjs/jwt';
+import { AlertsDetectorService } from '../../alerts/alerts-detector.service';
+import { forwardRef, Inject } from '@nestjs/common';
+import { PrismaService } from '../../common/prisma.service';
 
 @WebSocketGateway({
   namespace: 'tracking',
@@ -20,7 +23,12 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
   @WebSocketServer() server: Server;
   private readonly logger = new Logger(TrackingGateway.name);
 
-  constructor(private jwtService: JwtService) { }
+  constructor(
+    private jwtService: JwtService,
+    private prisma: PrismaService,
+    @Inject(forwardRef(() => AlertsDetectorService))
+    private alertsDetector: AlertsDetectorService,
+  ) { }
 
   async handleConnection(client: Socket) {
     try {
@@ -48,12 +56,21 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   @UsePipes(new ValidationPipe())
   @SubscribeMessage(TrackingEvents.LOCATION_UPDATE)
-  handleLocationUpdate(
+  async handleLocationUpdate(
     @MessageBody() data: LocationUpdatePayload,
     @ConnectedSocket() client: Socket,
   ) {
     const vesselId = client.data.user?.vesselId || data.vesselId || 'default-vessel';
     this.logger.log(`Received location update for vessel: ${vesselId} (Trip: ${data.tripId})`);
+
+    // Real-time Detection Logic
+    await this.alertsDetector.processLocationUpdate(vesselId, {
+      lat: data.latitude,
+      lon: data.longitude,
+      speed: data.speed,
+      heading: data.heading,
+      tripId: data.tripId
+    });
 
     // Broadcast to dashboard
     this.server.to('admin:fleet').emit(TrackingEvents.VESSEL_LIVE_UPDATE, {
@@ -65,8 +82,23 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   @SubscribeMessage(TrackingEvents.SOS_TRIGGERED)
-  handleSos(@MessageBody() data: SosTriggerPayload) {
+  async handleSos(@MessageBody() data: SosTriggerPayload) {
     this.logger.warn(`SOS Triggered for vessel ${data.vesselId}`);
+
+    // Persist SOS as Critical Alert
+    const vessel = await this.prisma.vessel.findUnique({ where: { id: data.vesselId } });
+    if (vessel) {
+        await this.prisma.alert.create({
+            data: {
+                vesselId: data.vesselId,
+                type: 'SOS / Distress Signal',
+                severity: 'CRITICAL',
+                message: `URGENT: SOS Signal received from ${vessel.name}. Immediate assistance required.`,
+                status: 'ACTIVE'
+            }
+        });
+    }
+
     this.server.to('admin:fleet').emit(TrackingEvents.SOS_TRIGGERED, data);
   }
 }

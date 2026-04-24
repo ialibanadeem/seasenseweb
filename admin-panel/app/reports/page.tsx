@@ -216,9 +216,9 @@ export default function FleetReportsPage() {
     return (
         <div className="flex-1 overflow-y-auto bg-slate-50 flex flex-col font-sans">
             {/* Nav Header */}
-            <div className="bg-white border-b border-slate-200 sticky top-0 z-30 px-8 py-8 flex items-center justify-between shadow-sm">
+            <div className="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 md:px-8 py-5 md:py-8 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+                    <h1 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                             <BarChart size={20} />
                         </div>
@@ -227,7 +227,7 @@ export default function FleetReportsPage() {
                     <p className="text-[14px] font-medium text-slate-500 mt-2">Enterprise-grade fleet intelligence and movement auditing suite.</p>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 md:gap-4 w-full md:w-auto">
                     <div className="relative group">
                         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={16} />
                         <input 
@@ -235,12 +235,12 @@ export default function FleetReportsPage() {
                             placeholder="Find specific audit..." 
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-10 pr-4 py-2.5 rounded-2xl border border-slate-200 bg-slate-50 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 text-[13px] font-bold transition-all w-72" 
+                            className="pl-10 pr-4 py-2.5 rounded-2xl border border-slate-200 bg-slate-50 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 text-[13px] font-bold transition-all w-full sm:w-72" 
                         />
                     </div>
                     <button 
                         onClick={() => setIsModalOpen(true)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-2xl font-bold text-[14px] shadow-lg shadow-blue-600/10 flex items-center gap-2 active:scale-95 transition-all"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-2xl font-bold text-[14px] shadow-lg shadow-blue-600/10 flex items-center justify-center gap-2 active:scale-95 transition-all w-full sm:w-auto"
                     >
                         <Plus size={18} />
                         Build New Audit
@@ -248,23 +248,23 @@ export default function FleetReportsPage() {
                 </div>
             </div>
 
-            <div className="p-8 max-w-[1600px] mx-auto w-full flex flex-col gap-8">
+            <div className="p-4 md:p-8 max-w-[1600px] mx-auto w-full flex flex-col gap-4 md:gap-8">
                 {/* Visual KPI Cards */}
-                <div className="grid grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
                     {[
                         { icon: Activity, label: 'Data Quality', value: '99.1%', color: 'blue', detail: 'High Sync' },
                         { icon: Gauge, label: 'Fleet Efficiency', value: '88.4%', color: 'emerald', detail: 'v/s Last Month' },
                         { icon: Navigation, label: 'Deviations', value: '2.4%', color: 'rose', detail: 'Operational Flags' },
                         { icon: Ship, label: 'Active Reports', value: reports.length, color: 'sky', detail: 'Ready for Export' }
                     ].map((kpi, i) => (
-                        <div key={i} className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group cursor-default relative overflow-hidden">
+                        <div key={i} className="bg-white rounded-3xl p-4 md:p-6 border border-slate-200 shadow-sm hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group cursor-default relative overflow-hidden">
                             <div className="flex items-center justify-between mb-4 relative z-10">
                                 <div className={`w-12 h-12 rounded-2xl bg-${kpi.color}-50 text-${kpi.color}-600 flex items-center justify-center group-hover:scale-110 transition-transform`}><kpi.icon size={22} /></div>
                                 <span className={`text-[10px] font-bold uppercase tracking-widest text-${kpi.color}-600 bg-${kpi.color}-50 px-2.5 py-1 rounded-lg`}>{kpi.detail}</span>
                             </div>
                             <div className="relative z-10">
                                 <p className="text-[12px] font-bold text-slate-400 uppercase tracking-widest mb-1">{kpi.label}</p>
-                                <p className="text-3xl font-black text-slate-900 tracking-tight">{kpi.value}</p>
+                                <p className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{kpi.value}</p>
                             </div>
                         </div>
                     ))}
@@ -272,7 +272,7 @@ export default function FleetReportsPage() {
 
                 {/* Audit Registry */}
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden mb-12">
-                    <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-white text-slate-900">
+                    <div className="p-4 md:p-8 border-b border-slate-100 flex items-center justify-between bg-white text-slate-900">
                         <h2 className="text-lg font-bold flex items-center gap-2">
                              Full Audit Registry
                         </h2>
@@ -283,20 +283,20 @@ export default function FleetReportsPage() {
                     </div>
 
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                        <table className="w-full min-w-[900px] text-left border-collapse">
                             <thead>
                                 <tr className="bg-slate-50/50">
-                                    <th className="px-8 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">Document Details</th>
-                                    <th className="px-8 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">Analysis Period</th>
-                                    <th className="px-8 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">Operational Type</th>
-                                    <th className="px-8 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">Status</th>
-                                    <th className="px-8 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 text-right">Inspection Hub</th>
+                                    <th className="px-4 md:px-8 py-4 md:py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">Document Details</th>
+                                    <th className="px-4 md:px-8 py-4 md:py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">Analysis Period</th>
+                                    <th className="px-4 md:px-8 py-4 md:py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">Operational Type</th>
+                                    <th className="px-4 md:px-8 py-4 md:py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">Status</th>
+                                    <th className="px-4 md:px-8 py-4 md:py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 text-right">Inspection Hub</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {filtered.map(report => (
                                     <tr key={report.id} className="group border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-                                        <td className="px-8 py-6">
+                                        <td className="px-4 md:px-8 py-4 md:py-6">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-12 h-12 rounded-2xl bg-slate-50 text-slate-400 flex items-center justify-center border border-slate-100 group-hover:bg-blue-50 group-hover:text-blue-600 transition-all">
                                                     <FileText size={20} />
@@ -307,22 +307,22 @@ export default function FleetReportsPage() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-6">
+                                        <td className="px-4 md:px-8 py-4 md:py-6">
                                             <span className="text-[13px] font-bold text-slate-600 flex items-center gap-2">
                                                 <Calendar size={14} className="text-slate-300" />
                                                 {report.period}
                                             </span>
                                         </td>
-                                        <td className="px-8 py-6">
+                                        <td className="px-4 md:px-8 py-4 md:py-6">
                                             <p className="text-[14px] font-bold text-slate-800">{report.type}</p>
                                             <p className="text-[12px] font-medium text-slate-500 uppercase tracking-wider">{report.size}</p>
                                         </td>
-                                        <td className="px-8 py-6">
+                                        <td className="px-4 md:px-8 py-4 md:py-6">
                                             <span className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border ${report.status === 'Ready' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
                                                 {report.status}
                                             </span>
                                         </td>
-                                        <td className="px-8 py-6 text-right">
+                                        <td className="px-4 md:px-8 py-4 md:py-6 text-right">
                                             <div className="flex items-center justify-end gap-2">
                                                 <button 
                                                     onClick={() => {
@@ -352,9 +352,9 @@ export default function FleetReportsPage() {
 
             {/* Build New Audit Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
                     <div className="bg-white w-full max-w-[550px] rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-200">
-                        <div className="p-10 border-b border-slate-100 flex justify-between items-center bg-white">
+                        <div className="p-5 md:p-10 border-b border-slate-100 flex justify-between items-center bg-white">
                             <div>
                                 <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Audit Configurator</h3>
                                 <p className="text-[14px] font-medium text-slate-500 mt-1">Define scope for enterprise movement intelligence.</p>
@@ -364,7 +364,7 @@ export default function FleetReportsPage() {
                             </button>
                         </div>
 
-                        <div className="p-10 flex flex-col gap-8">
+                        <div className="p-5 md:p-10 flex flex-col gap-6 md:gap-8">
                             {isGenerating ? (
                                 <div className="py-20 flex flex-col items-center gap-8">
                                     <div className="relative">
@@ -420,7 +420,7 @@ export default function FleetReportsPage() {
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-4 mt-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mt-4">
                                         <button onClick={() => setIsModalOpen(false)} className="w-full py-4.5 rounded-[24px] border border-slate-200 text-[14px] font-bold text-slate-400 hover:bg-slate-50 transition-all active:scale-95 text-center">Discard</button>
                                         <button onClick={handleGenerate} className="w-full py-4.5 rounded-[24px] bg-blue-600 text-white text-[14px] font-bold shadow-2xl shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95 text-center">Initialize Audit</button>
                                     </div>
@@ -436,13 +436,13 @@ export default function FleetReportsPage() {
                 <div className="fixed inset-0 z-[100] flex items-center justify-end bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-500">
                     <div className="bg-white w-full max-w-[900px] h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-500 ease-out border-l border-white/20">
                         {/* Viewer Header */}
-                        <div className="p-10 border-b border-slate-50 flex justify-between items-center bg-gradient-to-r from-blue-600 to-sky-500 text-white shrink-0">
+                        <div className="p-4 md:p-10 border-b border-slate-50 flex justify-between items-center bg-gradient-to-r from-blue-600 to-sky-500 text-white shrink-0 gap-3">
                             <div>
                                 <div className="flex items-center gap-3 mb-2">
                                     <span className="px-3 py-1 rounded-lg bg-white/20 text-[10px] font-black uppercase tracking-widest">Document ID: {viewingReport.id}</span>
                                     <span className="px-3 py-1 rounded-lg bg-emerald-400 text-emerald-950 text-[10px] font-black uppercase tracking-widest">{viewingReport.status}</span>
                                 </div>
-                                <h3 className="text-3xl font-black tracking-tight">{viewingReport.type}</h3>
+                                <h3 className="text-xl md:text-3xl font-black tracking-tight">{viewingReport.type}</h3>
                                 <p className="text-blue-100 font-medium text-[14px] mt-1 flex items-center gap-2">
                                     <Ship size={14} /> Comprehensive Audit for SeaSense Collective Fleet
                                 </p>
@@ -453,11 +453,11 @@ export default function FleetReportsPage() {
                         </div>
 
                         {/* Viewer Body */}
-                        <div className="flex-1 overflow-y-auto p-12 bg-[#fdfdfd]">
-                            <div className="max-w-[700px] mx-auto flex flex-col gap-12">
+                        <div className="flex-1 overflow-y-auto p-4 md:p-12 bg-[#fdfdfd]">
+                            <div className="max-w-[700px] mx-auto flex flex-col gap-6 md:gap-12">
                                 
                                 {/* 1. Visual Scorecards */}
-                                <div className="grid grid-cols-3 gap-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
                                     {viewingReport.data?.metrics.map((m: any, i: number) => (
                                         <div key={i} className="p-6 rounded-[32px] bg-white border border-slate-100 shadow-sm flex flex-col gap-2">
                                             <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{m.label}</p>
@@ -469,12 +469,12 @@ export default function FleetReportsPage() {
 
                                 {/* 2. Deep Intelligence (Conditional View) */}
                                 {viewingReport.data?.isCollective && (
-                                    <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700 bg-blue-50/50 p-8 rounded-[40px] border border-blue-100/50 mb-4">
+                                    <div className="flex flex-col gap-6 md:gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700 bg-blue-50/50 p-4 md:p-8 rounded-[24px] md:rounded-[40px] border border-blue-100/50 mb-4">
                                         <div className="flex items-center justify-between">
                                             <h4 className="text-lg font-black text-slate-900 flex items-center gap-2"><TrendingUp size={20} className="text-blue-600" /> Comparative Fleet Rankings</h4>
                                             <span className="text-[11px] font-black text-blue-600 bg-blue-100 px-3 py-1 rounded-full uppercase tracking-widest">Efficiency Index</span>
                                         </div>
-                                        <div className="h-[220px] w-full">
+                                        <div className="h-[200px] md:h-[220px] w-full">
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <ReBarChart data={viewingReport.data.vesselRankings} layout="vertical" margin={{ left: 40 }}>
                                                     <XAxis type="number" hide />
@@ -499,7 +499,7 @@ export default function FleetReportsPage() {
                                             <h4 className="text-lg font-black text-slate-900 flex items-center gap-2"><Zap size={20} className="text-blue-500" /> {viewingReport.data?.isCollective ? 'Fleet Velocity' : 'Velocity'} Distribution Map</h4>
                                             <TrendingUp size={20} className="text-slate-300" />
                                         </div>
-                                        <div className="h-[300px] w-full">
+                                        <div className="h-[240px] md:h-[300px] w-full">
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <AreaChart data={[
                                                     { t: '0h', v: 4 }, { t: '2h', v: 12 }, { t: '4h', v: 18 }, 
@@ -566,7 +566,7 @@ export default function FleetReportsPage() {
                                                 </ReBarChart>
                                             </ResponsiveContainer>
                                         </div>
-                                        <div className="grid grid-cols-2 gap-6">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                                             <div className="bg-emerald-50/50 p-6 rounded-[32px] border border-emerald-100 flex items-center gap-4">
                                                 <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shrink-0">
                                                     <CheckCircle size={24} />
@@ -596,8 +596,8 @@ export default function FleetReportsPage() {
                                             <h4 className="text-lg font-black text-slate-900 flex items-center gap-2"><Ship size={20} className="text-blue-500" /> Vessel Contribution Breakdown</h4>
                                             <FileSpreadsheet size={20} className="text-slate-300" />
                                         </div>
-                                        <div className="bg-white border border-slate-200 rounded-[32px] overflow-hidden shadow-sm">
-                                            <table className="w-full text-left">
+                                        <div className="bg-white border border-slate-200 rounded-[32px] overflow-hidden shadow-sm overflow-x-auto">
+                                            <table className="w-full min-w-[560px] text-left">
                                                 <thead className="bg-slate-50/50 border-b border-slate-100">
                                                     <tr>
                                                         <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Vessel Name</th>
@@ -624,20 +624,20 @@ export default function FleetReportsPage() {
                         </div>
 
                         {/* Viewer Footer */}
-                        <div className="p-10 border-t border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0">
+                        <div className="p-4 md:p-10 border-t border-slate-100 flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-slate-50/50 shrink-0">
                             <div className="flex items-center gap-4">
                                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest uppercase">Verified by SeaSense AI Engine</p>
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 md:gap-3 w-full sm:w-auto">
                                 <button 
                                     onClick={() => handleDownload(viewingReport.id, 'csv', viewingReport.type)}
-                                    className="px-6 py-3 rounded-2xl border border-slate-200 bg-white font-bold text-[14px] text-slate-600 hover:bg-slate-50 transition-all active:scale-95 flex items-center gap-2"
+                                    className="flex-1 sm:flex-none px-4 md:px-6 py-3 rounded-2xl border border-slate-200 bg-white font-bold text-[14px] text-slate-600 hover:bg-slate-50 transition-all active:scale-95 flex items-center justify-center gap-2"
                                 >
                                     <FileSpreadsheet size={16} /> Raw CSV
                                 </button>
                                 <button 
                                     onClick={() => handleDownload(viewingReport.id, 'pdf', viewingReport.type)}
-                                    className="px-8 py-3 rounded-2xl bg-slate-900 text-white font-bold text-[14px] shadow-xl hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-2"
+                                    className="flex-1 sm:flex-none px-5 md:px-8 py-3 rounded-2xl bg-slate-900 text-white font-bold text-[14px] shadow-xl hover:bg-slate-800 transition-all active:scale-95 flex items-center justify-center gap-2"
                                 >
                                     <Download size={16} /> Save PDF Report
                                 </button>

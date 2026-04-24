@@ -22,7 +22,7 @@ export default function DashboardMap() {
         map.current = new maptilersdk.Map({
             container: mapContainer.current as HTMLDivElement,
             // Using the ultra-clean Data Visualization Light style for a premium light-themed dashboard
-            style: `https://api.maptiler.com/maps/dataviz-light/style.json?key=${MAPTILER_KEY}`,
+            style: `https://api.maptiler.com/maps/streets-v2/style.json?key=${MAPTILER_KEY}`,
             center: [67.0011, 24.8607], // Centered at Karachi
             zoom: 11,
             dragPan: true,
@@ -59,6 +59,7 @@ export default function DashboardMap() {
             if (map.current) {
                 map.current.remove();
                 map.current = null;
+                markersRef.current = {};
             }
         };
     }, []);
@@ -96,12 +97,20 @@ export default function DashboardMap() {
             
             if (lat === undefined || lng === undefined) return;
             
-            let color = '#27272a'; // Slate-800 default
-            if (status === 'ACTIVE' || status === 'MOVING' || vesselData.speed > 2) {
-                color = '#10b981'; // Emerald-500
-            } else if (status === 'IDLE' || status === 'MAINTENANCE') {
-                color = '#f59e0b'; // Amber-500
+            const lastUpdated = new Date(vesselData.timestamp || vesselData.lastSeen || Date.now());
+            const timeDiff = (Date.now() - lastUpdated.getTime()) / 1000 / 60; // in minutes
+            const isOffline = timeDiff > 5 || status?.toUpperCase() === 'OFFLINE';
+            let displayStatus = status || 'UNKNOWN';
+            
+            if (isOffline) {
+                displayStatus = 'OFFLINE';
+            } else if (vesselData.speed === 0 || vesselData.speed <= 2) {
+                displayStatus = 'IDLE';
+            } else if (vesselData.speed > 2) {
+                displayStatus = 'MOVING';
             }
+
+            const imgFilterClass = isOffline ? 'grayscale opacity-60' : 'opacity-95 hover:opacity-100 transition-opacity';
 
             if (markersRef.current[vesselId]) {
                 const marker = markersRef.current[vesselId];
@@ -112,6 +121,18 @@ export default function DashboardMap() {
                 const svgWrapper = el.querySelector('.boat-wrapper') as HTMLElement;
                 if (svgWrapper) {
                     svgWrapper.style.transform = `rotate(${vesselData.heading}deg)`;
+                }
+
+                // Update grayscale
+                const imgEl = el.querySelector('img');
+                if (imgEl) {
+                    imgEl.className = `w-full h-full object-contain ${imgFilterClass}`;
+                }
+
+                // Update popup
+                const popup = marker.getPopup();
+                if (popup) {
+                    popup.setHTML(`<strong>Vessel ${vesselId}</strong><br/>Status: ${displayStatus}<br/>Speed: ${vesselData.speed_kmh || vesselData.speed || 0} kn`);
                 }
             } else {
                 const el = document.createElement('div');
@@ -126,7 +147,7 @@ export default function DashboardMap() {
                 el.innerHTML = `
                     <div class="boat-wrapper w-full h-full transition-transform duration-[1000ms] ease-linear" style="transform: rotate(${vesselData.heading}deg)">
                         <div class="relative w-full h-full">
-                            <img src="/boat-marker.png" alt="3D Boat" class="w-full h-full object-contain opacity-95 hover:opacity-100 transition-opacity" />
+                            <img src="/boat-marker.png" alt="3D Boat" class="w-full h-full object-contain ${imgFilterClass}" />
                         </div>
                     </div>
                 `;
@@ -138,7 +159,7 @@ export default function DashboardMap() {
                     .setLngLat([lng, lat])
                     .setPopup(
                         new maptilersdk.Popup({ offset: 25 }).setHTML(
-                            `<strong>Vessel ${vesselId}</strong><br/>Status: ${status}<br/>Speed: ${vesselData.speed_kmh || vesselData.speed} kn`
+                            `<strong>Vessel ${vesselId}</strong><br/>Status: ${displayStatus}<br/>Speed: ${vesselData.speed_kmh || vesselData.speed || 0} kn`
                         )
                     )
                     .addTo(map.current!);

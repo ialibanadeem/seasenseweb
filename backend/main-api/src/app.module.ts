@@ -12,6 +12,7 @@ import { VesselsModule } from './vessels/vessels.module';
 import { TripsModule } from './trips/trips.module';
 import { LocationModule } from './location/location.module';
 import { AlertsModule } from './alerts/alerts.module';
+import { WeatherModule } from './weather/weather.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { AlertsModule } from './alerts/alerts.module';
     TripsModule,
     LocationModule,
     AlertsModule,
+    WeatherModule,
   ],
   controllers: [AppController],
   providers: [AppService],

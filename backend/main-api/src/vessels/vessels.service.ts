@@ -1,13 +1,42 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../common/prisma.service';
 import { Prisma, Vessel } from '@prisma/client';
+import { PrismaService } from '../common/prisma.service';
+import { TrackingGateway } from '../realtime/tracking/tracking.gateway';
 
 @Injectable()
 export class VesselsService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private gateway: TrackingGateway
+    ) { }
 
     async create(data: Prisma.VesselCreateInput): Promise<Vessel> {
-        return this.prisma.vessel.create({ data });
+        const vessel = await this.prisma.vessel.create({ data });
+        
+        // Notification for new boat
+        const alert = await this.prisma.alert.create({
+            data: {
+                vesselId: vessel.id,
+                type: 'Fleet Update',
+                severity: 'INFO',
+                message: `New vessel "${vessel.name}" has been added to the fleet and is awaiting activation.`,
+                status: 'ACTIVE'
+            }
+        });
+
+        // Broadcast to UI
+        if (this.gateway?.server) {
+            this.gateway.server.to('admin:fleet').emit('ALERT_CREATED', {
+                id: alert.id.substring(0, 8).toUpperCase(),
+                type: alert.type,
+                vessel: vessel.name,
+                severity: alert.severity,
+                message: alert.message,
+                timestamp: alert.timestamp.toISOString()
+            });
+        }
+
+        return vessel;
     }
 
     async findAll(): Promise<Vessel[]> {

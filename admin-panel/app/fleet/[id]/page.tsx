@@ -15,47 +15,47 @@ export default function VesselAnalyticsDashboard() {
     const vessel = vessels[id];
     const liveInfo = livePositions[id];
 
-    // Analytics State Placeholder
-    const [analytics, setAnalytics] = useState<any>({
-        distanceOverTime: [
-            { name: 'Mon', distance: 45 }, { name: 'Tue', distance: 120 }, { name: 'Wed', distance: 90 },
-            { name: 'Thu', distance: 15 }, { name: 'Fri', distance: 210 }, { name: 'Sat', distance: 110 }, { name: 'Sun', distance: 30 }
-        ],
-        durationOverTime: [
-            { name: 'Mon', duration: 4 }, { name: 'Tue', duration: 12 }, { name: 'Wed', duration: 8 },
-            { name: 'Thu', duration: 2 }, { name: 'Fri', duration: 18 }, { name: 'Sat', duration: 9 }, { name: 'Sun', duration: 3 }
-        ],
-        idleVsMoving: [
-            { name: 'Moving', value: 75 }, { name: 'Idle', value: 25 }
-        ],
-        efficiency: {
-            avgDistancePerTrip: 85,
-            totalTimeAtSea: '48h',
-            idleTimeStr: '12h'
-        }
-    });
-
-    const [trips, setTrips] = useState<any[]>([
-        { id: 'TRP-001', startTime: new Date(Date.now() - 86400000 * 2), endTime: new Date(Date.now() - 86400000 * 1.5), distance: 145.2, avgSpeed: 24.5, status: 'COMPLETED' },
-        { id: 'TRP-002', startTime: new Date(Date.now() - 86400000 * 5), endTime: new Date(Date.now() - 86400000 * 4.1), distance: 88.0, avgSpeed: 18.2, status: 'COMPLETED' }
-    ]);
-
-    const [alerts, setAlerts] = useState<any[]>([
-        { id: 'ALT-1', type: 'ROUTE_DEVIATION', severity: 'HIGH', message: 'Vessel deviated 5nm from planned route.', timestamp: new Date(Date.now() - 3600000) },
-        { id: 'ALT-2', type: 'SPEED_DROP', severity: 'MEDIUM', message: 'Sudden speed drop from 24kts to 0kts.', timestamp: new Date(Date.now() - 7200000) },
-        { id: 'ALT-3', type: 'GPS_LOST', severity: 'CRITICAL', message: 'GPS signal lost for 15 minutes.', timestamp: new Date(Date.now() - 86400000) }
-    ]);
-
-    const [timeline, setTimeline] = useState<any[]>([
-        { id: 'TL-1', event: 'STARTED_MOVING', details: 'Vessel departed Karachi Port.', timestamp: new Date(new Date().setHours(10, 0, 0, 0)) },
-        { id: 'TL-2', event: 'SPEED_DROPPED', details: 'Navigating rough waters near Churna Island.', timestamp: new Date(new Date().setHours(12, 30, 0, 0)) },
-        { id: 'TL-3', event: 'IDLE', details: 'Holding position near Manora.', timestamp: new Date(new Date().setHours(13, 15, 0, 0)) },
-        { id: 'TL-4', event: 'STARTED_MOVING', details: 'Resumed transit to Port Qasim.', timestamp: new Date(new Date().setHours(14, 0, 0, 0)) },
-    ]);
-    const [loading, setLoading] = useState(false);
+    // Analytics State Placeholder - Set to empty for now
+    const [analytics, setAnalytics] = useState<any>(null);
+    const [trips, setTrips] = useState<any[]>([]);
+    const [alerts, setAlerts] = useState<any[]>([]);
+    const [timeline, setTimeline] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Static component, no fetch required for MVP placeholders
+        const fetchVesselData = async () => {
+            if (!id) return;
+            setLoading(true);
+            try {
+                const apiURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3005';
+                
+                // Fetch trips for this specific vessel
+                const tripsRes = await fetch(`${apiURL}/trips/history/${id}`);
+                const tripsData = await tripsRes.json();
+                setTrips(Array.isArray(tripsData) ? tripsData : []);
+
+                // Placeholder for analytics and timeline - these would come from dedicated endpoints
+                setAnalytics({
+                    distanceOverTime: [],
+                    durationOverTime: [],
+                    idleVsMoving: [],
+                    efficiency: {
+                        avgDistancePerTrip: 0,
+                        totalTimeAtSea: '--',
+                        idleTimeStr: '--'
+                    }
+                });
+                
+                setAlerts([]);
+                setTimeline([]);
+            } catch (err) {
+                console.error("Failed to fetch vessel analytics:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchVesselData();
     }, [id]);
 
     if (!vessel) {
@@ -72,13 +72,13 @@ export default function VesselAnalyticsDashboard() {
     return (
         <div className="flex-1 bg-slate-50 overflow-y-auto">
             {/* Context Header */}
-            <div className="bg-white border-b border-slate-200 sticky top-0 z-10 px-8 py-5 flex items-center justify-between">
-                <div className="flex items-center gap-5">
+            <div className="bg-white border-b border-slate-200 sticky top-0 z-10 px-4 md:px-8 py-4 md:py-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-3 md:gap-5">
                     <Link href="/fleet" className="w-10 h-10 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 transition-colors">
                         <ArrowLeft size={20} />
                     </Link>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+                        <h1 className="text-xl md:text-2xl font-bold text-slate-900 flex items-center gap-2 md:gap-3">
                             {vessel.name}
                             <span 
                                 className={`px-2 py-1 rounded-md text-[10px] uppercase tracking-widest font-bold ${
@@ -95,7 +95,7 @@ export default function VesselAnalyticsDashboard() {
                         <p className="text-[13px] font-medium text-slate-500">{vessel.type} • ID: {vessel.id}</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-4 md:gap-6 w-full md:w-auto justify-between md:justify-end">
                     <div className="flex flex-col items-end">
                         <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Live Engine</span>
                         <span className={`text-[14px] font-bold ${liveInfo?.engineStatus === 'running' ? 'text-emerald-600' : 'text-slate-500 uppercase'}`}>{liveInfo ? liveInfo.engineStatus : 'OFFLINE'}</span>
@@ -103,45 +103,45 @@ export default function VesselAnalyticsDashboard() {
                     <div className="w-px h-8 bg-slate-200"></div>
                     <div className="flex flex-col items-end">
                         <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Location</span>
-                        <span className="text-[14px] font-bold text-slate-800">{(liveInfo && liveInfo.coordinates && liveInfo.coordinates.length >= 2) ? `${liveInfo.coordinates[1].toFixed(4)}, ${liveInfo.coordinates[0].toFixed(4)}` : '--'}</span>
+                        <span className="text-[12px] md:text-[14px] font-bold text-slate-800 text-right">{liveInfo && liveInfo.coordinates && liveInfo.coordinates.length >= 2 ? `${liveInfo.coordinates[1].toFixed(4)}, ${liveInfo.coordinates[0].toFixed(4)}` : '--'}</span>
                     </div>
                 </div>
             </div>
 
-            <div className="p-8 max-w-[1600px] mx-auto flex flex-col gap-8">
+            <div className="p-4 md:p-8 max-w-[1600px] mx-auto flex flex-col gap-4 md:gap-8">
                 
                 {/* Core Live Telemetry row */}
-                <div className="grid grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
                     <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-5 relative overflow-hidden group">
                         <div className="absolute right-0 top-0 w-32 h-32 bg-blue-50 rounded-full blur-3xl -mr-10 -mt-10 opacity-50 group-hover:opacity-100 transition-opacity"></div>
                         <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 z-10"><Gauge size={24} /></div>
-                        <div className="z-10">
+                        <div className="z-10 min-w-0">
                             <p className="text-[12px] font-bold text-slate-400 uppercase tracking-widest mb-1">Instant Speed</p>
-                            <p className="text-[28px] font-black text-slate-900 tracking-tight">{liveInfo ? `${liveInfo.speed.toFixed(1)}` : '--'}<span className="text-[14px] font-bold text-slate-400 ml-1">kts</span></p>
+                            <p className="text-[24px] md:text-[28px] font-black text-slate-900 tracking-tight">{liveInfo ? `${liveInfo.speed.toFixed(1)}` : '--'}<span className="text-[14px] font-bold text-slate-400 ml-1">kts</span></p>
                         </div>
                     </div>
                     <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-5 relative overflow-hidden group">
                         <div className="absolute right-0 top-0 w-32 h-32 bg-cyan-50 rounded-full blur-3xl -mr-10 -mt-10 opacity-50 group-hover:opacity-100 transition-opacity"></div>
                         <div className="w-14 h-14 rounded-2xl bg-cyan-50 text-cyan-600 flex items-center justify-center shrink-0 z-10"><Droplets size={24} /></div>
-                        <div className="z-10">
+                        <div className="z-10 min-w-0">
                             <p className="text-[12px] font-bold text-slate-400 uppercase tracking-widest mb-1">Fuel Level</p>
-                            <p className="text-[28px] font-black text-slate-900 tracking-tight">{liveInfo ? `${liveInfo.fuelLevel}` : '--'}<span className="text-[14px] font-bold text-slate-400 ml-1">%</span></p>
+                            <p className="text-[24px] md:text-[28px] font-black text-slate-900 tracking-tight">{liveInfo ? `${liveInfo.fuelLevel}` : '--'}<span className="text-[14px] font-bold text-slate-400 ml-1">%</span></p>
                         </div>
                     </div>
                     <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-5 relative overflow-hidden group">
                         <div className="absolute right-0 top-0 w-32 h-32 bg-rose-50 rounded-full blur-3xl -mr-10 -mt-10 opacity-50 group-hover:opacity-100 transition-opacity"></div>
                         <div className="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 z-10"><Thermometer size={24} /></div>
-                        <div className="z-10">
+                        <div className="z-10 min-w-0">
                             <p className="text-[12px] font-bold text-slate-400 uppercase tracking-widest mb-1">Engine Temp</p>
-                            <p className="text-[28px] font-black text-slate-900 tracking-tight">{liveInfo ? `85` : '--'}<span className="text-[14px] font-bold text-slate-400 ml-1">°C</span></p>
+                            <p className="text-[24px] md:text-[28px] font-black text-slate-900 tracking-tight">{liveInfo ? `85` : '--'}<span className="text-[14px] font-bold text-slate-400 ml-1">°C</span></p>
                         </div>
                     </div>
                     <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-5 relative overflow-hidden group">
                         <div className="absolute right-0 top-0 w-32 h-32 bg-amber-50 rounded-full blur-3xl -mr-10 -mt-10 opacity-50 group-hover:opacity-100 transition-opacity"></div>
                         <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 z-10"><Battery size={24} /></div>
-                        <div className="z-10">
+                        <div className="z-10 min-w-0">
                             <p className="text-[12px] font-bold text-slate-400 uppercase tracking-widest mb-1">Battery</p>
-                            <p className="text-[28px] font-black text-slate-900 tracking-tight">{liveInfo ? `98` : '--'}<span className="text-[14px] font-bold text-slate-400 ml-1">%</span></p>
+                            <p className="text-[24px] md:text-[28px] font-black text-slate-900 tracking-tight">{liveInfo ? `98` : '--'}<span className="text-[14px] font-bold text-slate-400 ml-1">%</span></p>
                         </div>
                     </div>
                 </div>
@@ -149,10 +149,10 @@ export default function VesselAnalyticsDashboard() {
                 {loading ? (
                     <div className="h-64 flex items-center justify-center text-slate-400 font-medium">Gathering Intelligence...</div>
                 ) : (
-                    <div className="grid grid-cols-12 gap-8">
+                    <div className="grid grid-cols-12 gap-4 md:gap-8">
                         {/* Area 1: High Level Charts */}
-                        <div className="col-span-8 flex flex-col gap-8">
-                            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+                        <div className="col-span-8 flex flex-col gap-4 md:gap-8">
+                            <div className="bg-white border border-slate-200 rounded-3xl p-4 md:p-6 shadow-sm">
                                 <h3 className="font-bold text-slate-900 mb-6 flex items-center gap-2"><Route size={18} className="text-blue-500" /> Distance Over Time (Current Week)</h3>
                                 <div className="h-[280px]">
                                     <ResponsiveContainer width="100%" height="100%">
@@ -167,8 +167,8 @@ export default function VesselAnalyticsDashboard() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-8">
-                                <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
+                                <div className="bg-white border border-slate-200 rounded-3xl p-4 md:p-6 shadow-sm">
                                     <h3 className="font-bold text-slate-900 mb-6 flex items-center gap-2"><Clock size={18} className="text-indigo-500" /> Trip Duration Patterns</h3>
                                     <div className="h-[200px]">
                                         <ResponsiveContainer width="100%" height="100%">
@@ -186,7 +186,7 @@ export default function VesselAnalyticsDashboard() {
                                         </ResponsiveContainer>
                                     </div>
                                 </div>
-                                <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
+                                <div className="bg-white border border-slate-200 rounded-3xl p-4 md:p-6 shadow-sm flex flex-col justify-between">
                                     <h3 className="font-bold text-slate-900 flex items-center gap-2"><Activity size={18} className="text-cyan-500" /> Engine State (Idle vs Moving)</h3>
                                     <div className="h-[180px] flex items-center justify-center">
                                         <ResponsiveContainer width="100%" height="100%">
@@ -208,10 +208,10 @@ export default function VesselAnalyticsDashboard() {
                             </div>
 
                             {/* Trip Intelligence Table */}
-                            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+                            <div className="bg-white border border-slate-200 rounded-3xl p-4 md:p-6 shadow-sm">
                                 <h3 className="font-bold text-slate-900 mb-6 flex items-center gap-2"><Route size={18} className="text-emerald-500" /> Trip Intelligence</h3>
                                 <div className="overflow-x-auto">
-                                    <table className="w-full text-left border-collapse">
+                                    <table className="w-full min-w-[900px] text-left border-collapse">
                                         <thead>
                                             <tr>
                                                 <th className="pb-4 text-[12px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">Trip ID</th>
@@ -242,10 +242,10 @@ export default function VesselAnalyticsDashboard() {
                         </div>
 
                         {/* Area 2: Side Panels (Alerts, Timeline, Heatmap) */}
-                        <div className="col-span-4 flex flex-col gap-8">
+                        <div className="col-span-4 flex flex-col gap-4 md:gap-8">
                             
                             {/* Alert Feed */}
-                            <div className="bg-white border border-rose-100 rounded-3xl p-6 shadow-sm flex flex-col">
+                            <div className="bg-white border border-rose-100 rounded-3xl p-4 md:p-6 shadow-sm flex flex-col">
                                 <h3 className="font-bold text-rose-900 mb-6 flex items-center gap-2"><AlertTriangle size={18} className="text-rose-500" /> Active Vessel Alerts</h3>
                                 <div className="flex flex-col gap-4">
                                     {(Array.isArray(alerts) ? alerts : []).map(alert => (
@@ -263,7 +263,7 @@ export default function VesselAnalyticsDashboard() {
                             </div>
 
                             {/* Efficiency Metrics Micro Card */}
-                            <div className="bg-slate-900 text-white border border-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+                            <div className="bg-slate-900 text-white border border-slate-800 rounded-3xl p-4 md:p-6 shadow-xl relative overflow-hidden">
                                 <div className="absolute -right-4 -top-4 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl"></div>
                                 <h3 className="font-bold text-slate-100 mb-6 flex items-center gap-2"><CheckCircle size={18} className="text-emerald-400" /> Lifetime Efficiency</h3>
                                 <div className="flex flex-col gap-5 relative z-10">
@@ -283,7 +283,7 @@ export default function VesselAnalyticsDashboard() {
                             </div>
 
                             {/* Activity Timeline */}
-                            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col">
+                            <div className="bg-white border border-slate-200 rounded-3xl p-4 md:p-6 shadow-sm flex flex-col">
                                 <h3 className="font-bold text-slate-900 mb-6 flex items-center gap-2"><MapPin size={18} className="text-purple-500" /> Activity Timeline</h3>
                                 <div className="flex flex-col gap-0 relative">
                                     <div className="absolute left-[15px] top-4 bottom-4 w-px bg-slate-200"></div>

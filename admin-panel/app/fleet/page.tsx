@@ -10,9 +10,12 @@ export default function FleetMasterPage() {
     const vesselList = Object.values(vessels);
 
     const getStatusColor = (status: string) => {
-        if (status === 'ACTIVE') return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-        if (status === 'MAINTENANCE') return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-        return 'bg-slate-100 text-slate-700 border-slate-200'; // Covers 'INACTIVE'
+        const s = status?.toLowerCase();
+        if (s === 'active' || s === 'moving') return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+        if (s === 'idle') return 'bg-amber-100 text-amber-700 border-amber-200';
+        if (s === 'maintenance') return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+        if (s === 'offline') return 'bg-rose-100 text-rose-700 border-rose-200';
+        return 'bg-slate-100 text-slate-700 border-slate-200';
     };
 
     return (
@@ -27,8 +30,25 @@ export default function FleetMasterPage() {
                     {vesselList.map(vessel => {
                         const liveInfo = livePositions[vessel.id];
                         
+                        let displayStatus = (vessel.status || 'OFFLINE').toUpperCase();
+                        if (liveInfo) {
+                            const lastUpdated = new Date(liveInfo.timestamp || liveInfo.lastSeen || Date.now());
+                            const timeDiff = (Date.now() - lastUpdated.getTime()) / 1000 / 60;
+                            const isOffline = timeDiff > 5 || liveInfo.status?.toUpperCase() === 'OFFLINE';
+                            
+                            if (isOffline) {
+                                displayStatus = 'OFFLINE';
+                            } else if (liveInfo.speed === 0 || liveInfo.speed <= 2) {
+                                displayStatus = 'IDLE';
+                            } else if (liveInfo.speed > 2) {
+                                displayStatus = 'MOVING';
+                            } else {
+                                displayStatus = (liveInfo.status || 'MOVING').toUpperCase();
+                            }
+                        }
+                        
                         return (
-                            <Link href={`/fleet/${vessel.id}`} key={vessel.id} className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group flex flex-col gap-6">
+                            <Link href={`/fleet/${vessel.id}`} key={vessel.id} className={`bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group flex flex-col gap-6 ${displayStatus === 'OFFLINE' ? 'opacity-75 grayscale' : ''}`}>
                                 <div className="flex justify-between items-start">
                                     <div className="flex items-center gap-4">
                                         <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
@@ -39,8 +59,8 @@ export default function FleetMasterPage() {
                                             <p className="text-[13px] font-medium text-slate-500">{vessel.type}</p>
                                         </div>
                                     </div>
-                                    <span className={`px-2.5 py-1 rounded-full text-[11px] uppercase tracking-wider font-bold border ${getStatusColor(vessel.status)}`}>
-                                        {vessel.status}
+                                    <span className={`px-2.5 py-1 rounded-full text-[11px] uppercase tracking-wider font-bold border ${getStatusColor(displayStatus)}`}>
+                                        {displayStatus}
                                     </span>
                                 </div>
 

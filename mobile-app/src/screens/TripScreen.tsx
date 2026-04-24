@@ -7,22 +7,38 @@ import { startLocationWatcher, stopLocationWatcher } from "../hooks/useLocationS
 export default function TripScreen() {
   const [tripId, setTripId] = useState<string | null>(null);
 
-  const startTrip = async () => {
-    const response = await api.post("/trips/start");
-    const id = response.data.tripId;
-    setTripId(id);
+  // Defaulting to Shaheen's UUID for deployment
+  const vesselId = "b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e";
 
-    startLocationWatcher(id);
+  const startTrip = async () => {
+    try {
+      const response = await api.post(`/trips/${vesselId}/start`, {
+        startTime: new Date().toISOString()
+      });
+      const id = response.data.id;
+      setTripId(id);
+
+      startLocationWatcher(id);
+    } catch (e) {
+      console.error("Failed to start trip", e);
+    }
   };
 
   const endTrip = async () => {
-    await api.post("/trips/end", { tripId });
-    stopLocationWatcher();
-    setTripId(null);
+    try {
+      if (!tripId) return;
+      await api.post(`/trips/${tripId}/end`, { 
+        endTime: new Date().toISOString() 
+      });
+      stopLocationWatcher();
+      setTripId(null);
+    } catch (e) {
+      console.error("Failed to end trip", e);
+    }
   };
 
   const triggerSOS = () => {
-    socket.emit("sos_triggered", { tripId });
+    socket.emit("sos_triggered", { tripId, vesselId });
   };
 
   return (

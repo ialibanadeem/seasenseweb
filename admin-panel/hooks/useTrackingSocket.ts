@@ -10,7 +10,7 @@ export const useTrackingSocket = (namespace = 'tracking') => {
     const setEmergency = useVesselStore((state) => state.setEmergency);
 
     useEffect(() => {
-        const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000';
+        const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3005';
 
         const socket = io(`${socketUrl}/${namespace}`, {
             // allowing fallback to polling if websocket fails

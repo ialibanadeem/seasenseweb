@@ -4,16 +4,18 @@ import {
     Body,
     Param,
     Get,
+    Query,
     UseGuards,
 } from '@nestjs/common';
 import { TripsService } from './trips.service';
+import { TripFilterDto } from './dto/trip-filter.dto';
 @Controller('trips')
 export class TripsController {
     constructor(private readonly tripsService: TripsService) { }
 
     @Get()
-    findAll() {
-        return this.tripsService.findAll();
+    findAll(@Query() query: TripFilterDto) {
+        return this.tripsService.findAll(query);
     }
 
     @Get(':id')

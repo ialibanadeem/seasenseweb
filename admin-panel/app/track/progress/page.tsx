@@ -12,7 +12,7 @@ const TRACKING_DATA = [
 export default function TrackProgressPage() {
     return (
         <div className="flex w-full h-full p-8 gap-8 bg-[#fafbfc]">
-            <div className="flex-1 flex flex-col max-w-[1200px] w-full mx-auto">
+            <div className="flex-1 flex flex-col max-w-[1200px] w-full mx-auto px-4 md:px-0">
                 <div className="flex justify-between items-start mb-8">
                     <div>
                         <h1 className="text-[28px] font-bold text-slate-900 tracking-tight">Active Deliveries</h1>

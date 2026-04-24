@@ -12,7 +12,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, UrlTile, Polyline } from "react-native-maps";
 import { StatusBar } from "expo-status-bar";
 import * as Location from "expo-location";
-import { MapPin } from "lucide-react-native";
+import { MapPin, Navigation, Zap, Activity } from "lucide-react-native";
 
 import { api } from "@/services/api";
 import { socket } from "@/services/socket";
@@ -112,6 +112,8 @@ export default function App() {
         }
       } catch (err) {
         console.warn("Failed to fetch vessels, defaulting to hardware mode");
+        setVesselId("b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e"); 
+        setVesselName("Shaheen (Offline Mode)");
       }
       // 3. User Location Watcher (Manual)
       const sub = await Location.watchPositionAsync(

@@ -6,7 +6,7 @@ import { Send, Star } from 'lucide-react';
 export default function FeedbackPage() {
     return (
         <div className="flex w-full h-full p-8 gap-8 bg-[#fafbfc]">
-            <div className="flex-1 flex flex-col max-w-[800px] w-full mx-auto">
+            <div className="flex-1 flex flex-col max-w-[800px] w-full mx-auto px-4 md:px-0">
                 <div className="flex justify-between items-start mb-8 text-center pt-8">
                     <div className="w-full">
                         <h1 className="text-[28px] font-bold text-slate-900 tracking-tight">We value your feedback</h1>

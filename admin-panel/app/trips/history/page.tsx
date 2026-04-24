@@ -1,21 +1,111 @@
-import React from 'react';
+'use client';
 
-export default function Page() {
-    return (
-        <div className="w-full h-full bg-transparent flex flex-col p-8">
-            <div className="flex justify-between items-center mb-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Trips History</h1>
-                    <p className="text-sm text-slate-500 mt-1">Manage and view your Trips History data here.</p>
-                </div>
-            </div>
+import React, { useEffect, useState, Suspense, useCallback } from 'react';
+import TripHistorySidebar from '@/components/trips/TripHistorySidebar';
+import TripPlaybackMap from '@/components/trips/TripPlaybackMap';
+import TripHistoryFilterBar from '@/components/trips/TripHistoryFilterBar';
+import { useSearchParams } from 'next/navigation';
+
+function PlaybackContent() {
+    const searchParams = useSearchParams();
+    const queryTripId = searchParams.get('tripId');
+    
+    const [trips, setTrips] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [selectedTripId, setSelectedTripId] = useState<string | null>(queryTripId);
+
+    // Filter State
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [selectedMonth, setSelectedMonth] = useState('');
+    const [selectedYear, setSelectedYear] = useState('');
+
+    const fetchTrips = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const apiURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3005';
             
-            <div className="flex-1 bg-white border border-slate-200 rounded-xl shadow-sm flex items-center justify-center">
-                <div className="text-center text-slate-400">
-                    <p className="text-lg font-medium">Trips History Module under construction.</p>
-                    <p className="text-sm mt-2">More generic dashboard component here...</p>
+            const params = new URLSearchParams();
+            if (startDate) params.append('startDate', startDate);
+            if (endDate) params.append('endDate', endDate);
+            if (selectedMonth) params.append('month', selectedMonth);
+            if (selectedYear) params.append('year', selectedYear);
+
+            const queryString = params.toString();
+            const res = await fetch(`${apiURL}/trips${queryString ? `?${queryString}` : ''}`);
+            const data = await res.json();
+            
+            const validTrips = data.filter((t: any) => t.startPoint !== null);
+            setTrips(validTrips);
+
+            // Auto-select first trip if none selected or if selected one disappeared from list
+            if (validTrips.length > 0) {
+                const stillExists = validTrips.find((t: any) => t.id === selectedTripId);
+                if (!selectedTripId || !stillExists) {
+                    setSelectedTripId(validTrips[0].id);
+                }
+            } else {
+                setSelectedTripId(null);
+            }
+        } catch (err) {
+            console.error("Failed to fetch fleet trips:", err);
+            setTrips([]);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [startDate, endDate, selectedMonth, selectedYear, selectedTripId]);
+
+    useEffect(() => {
+        fetchTrips();
+    }, [fetchTrips]);
+
+    const handleFilterChange = (filters: { startDate: string; endDate: string; month: string; year: string }) => {
+        setStartDate(filters.startDate);
+        setEndDate(filters.endDate);
+        setSelectedMonth(filters.month);
+        setSelectedYear(filters.year);
+    };
+
+    const handleClearFilters = () => {
+        setStartDate('');
+        setEndDate('');
+        setSelectedMonth('');
+        setSelectedYear('');
+    };
+
+    return (
+        <div className="w-full h-[calc(100vh-80px)] flex flex-col bg-slate-50 overflow-hidden">
+            <TripHistoryFilterBar 
+                startDate={startDate}
+                endDate={endDate}
+                selectedMonth={selectedMonth}
+                selectedYear={selectedYear}
+                onFilterChange={handleFilterChange}
+                onClearFilters={handleClearFilters}
+            />
+
+            <div className="flex-1 flex overflow-hidden">
+                {/* Left Selection Area */}
+                <TripHistorySidebar 
+                    isLoading={isLoading}
+                    trips={trips}
+                    selectedTripId={selectedTripId}
+                    onSelectTrip={setSelectedTripId}
+                />
+
+                {/* Right Map Canvas Area */}
+                <div className="flex-1 relative">
+                    <TripPlaybackMap tripId={selectedTripId} />
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function TripsHistoryPage() {
+    return (
+        <Suspense fallback={<div className="flex-1 bg-slate-50 overflow-hidden" />}>
+            <PlaybackContent />
+        </Suspense>
     );
 }

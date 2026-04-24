@@ -104,7 +104,7 @@ export default function AlertsDashboardPage() {
     return (
         <div className="flex-1 overflow-y-auto bg-slate-50 flex flex-col">
             {/* Header */}
-            <div className="bg-white border-b border-slate-200 sticky top-0 z-20 px-8 py-8 flex flex-col gap-6">
+            <div className="bg-white border-b border-slate-200 sticky top-0 z-20 px-4 md:px-8 py-5 md:py-8 flex flex-col gap-4 md:gap-6">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
@@ -118,10 +118,10 @@ export default function AlertsDashboardPage() {
                 </div>
             </div>
 
-            <div className="p-8 max-w-[1600px] mx-auto w-full flex flex-col gap-8">
+            <div className="p-4 md:p-8 max-w-[1600px] mx-auto w-full flex flex-col gap-4 md:gap-8">
                 
                 {/* 4 Interactive KPI Cards */}
-                <div className="grid grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
                     {/* System Alerts */}
                     <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group cursor-default relative overflow-hidden">
                         <div className="absolute right-0 top-0 w-32 h-32 bg-rose-50 rounded-full blur-3xl -mr-10 -mt-10 opacity-50 group-hover:opacity-100 transition-opacity"></div>
@@ -255,7 +255,7 @@ export default function AlertsDashboardPage() {
                     </div>
 
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                        <table className="w-full min-w-[760px] text-left border-collapse">
                             <thead>
                                 <tr className="bg-white">
                                     <th className="px-6 py-4 text-[12px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 w-12"></th>

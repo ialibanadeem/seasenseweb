@@ -5,6 +5,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GpsSyncService } from './gps-sync.service';
 import { CommonModule } from '../common/common.module';
 import { RedisModule } from '../redis/redis.module';
+import { AlertsModule } from '../alerts/alerts.module';
+import { forwardRef } from '@nestjs/common';
 
 @Module({
   imports: [
@@ -20,6 +22,7 @@ import { RedisModule } from '../redis/redis.module';
     }),
     CommonModule,
     RedisModule,
+    forwardRef(() => AlertsModule),
   ],
   providers: [TrackingGateway, GpsSyncService],
   exports: [TrackingGateway],
