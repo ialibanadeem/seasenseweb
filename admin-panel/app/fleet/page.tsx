@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useVesselStore } from '@/store/useVesselStore';
 import { Ship, Activity, Navigation, Droplets, MapPin, Gauge, Plus } from 'lucide-react';
