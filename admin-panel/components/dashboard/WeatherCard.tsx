@@ -3,8 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { Cloud, Sun, Wind, Droplets, Thermometer, CloudRain } from 'lucide-react';
 
-const API_KEY = '9e377abda5f48e8778647493d637ac07';
-const CITY = 'Karachi';
 
 interface WeatherData {
     temp: number;
@@ -22,18 +20,18 @@ export default function WeatherCard() {
     useEffect(() => {
         const fetchWeather = async () => {
             try {
-                const response = await fetch(
-                    `https://api.openweathermap.org/data/2.5/weather?q=${CITY}&units=metric&appid=${API_KEY}`
-                );
-                const data = await response.json();
+                const apiURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3005';
+                const res = await fetch(`${apiURL}/weather/analytics`);
+                if (!res.ok) throw new Error("Failed to fetch weather");
+                const data = await res.json();
                 
-                if (data.main) {
+                if (data.live) {
                     setWeather({
-                        temp: Math.round(data.main.temp),
-                        description: data.weather[0].description,
-                        humidity: data.main.humidity,
-                        windSpeed: Math.round(data.wind.speed * 3.6), // Convert m/s to km/h
-                        icon: data.weather[0].main,
+                        temp: Math.round(data.live.airTemp),
+                        description: getWeatherDescription(data.live.conditionCode),
+                        humidity: data.live.humidity,
+                        windSpeed: Math.round(data.live.windSpeed),
+                        icon: getConditionIconName(data.live.conditionCode),
                     });
                 }
                 setLoading(false);
@@ -41,6 +39,23 @@ export default function WeatherCard() {
                 console.error("Failed to fetch weather:", error);
                 setLoading(false);
             }
+        };
+
+        const getWeatherDescription = (code: number) => {
+            if (code === 0) return 'Clear Sky';
+            if (code >= 1 && code <= 3) return 'Partly Cloudy';
+            if (code >= 45 && code <= 48) return 'Foggy';
+            if (code >= 51 && code <= 67) return 'Rainy';
+            if (code >= 80 && code <= 82) return 'Showers';
+            if (code >= 95) return 'Thunderstorm';
+            return 'Clear';
+        };
+
+        const getConditionIconName = (code: number) => {
+            if (code === 0) return 'clear';
+            if (code >= 1 && code <= 3) return 'clouds';
+            if (code >= 51 && code <= 82) return 'rain';
+            return 'clear';
         };
 
         fetchWeather();
