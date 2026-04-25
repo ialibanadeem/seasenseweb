@@ -20,23 +20,26 @@ export default function WeatherCard() {
     useEffect(() => {
         const fetchWeather = async () => {
             try {
-                const apiURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3005';
-                const res = await fetch(`${apiURL}/weather/analytics`);
-                if (!res.ok) throw new Error("Failed to fetch weather");
+                // Direct call to Open-Meteo as requested
+                const lat = 24.86;
+                const lon = 67.01;
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&wind_speed_unit=kmh&temperature_unit=celsius`;
+                
+                const res = await fetch(url);
                 const data = await res.json();
                 
-                if (data.live) {
+                if (data.current) {
                     setWeather({
-                        temp: Math.round(data.live.airTemp),
-                        description: getWeatherDescription(data.live.conditionCode),
-                        humidity: data.live.humidity,
-                        windSpeed: Math.round(data.live.windSpeed),
-                        icon: getConditionIconName(data.live.conditionCode),
+                        temp: Math.round(data.current.temperature_2m),
+                        description: getWeatherDescription(data.current.weather_code),
+                        humidity: data.current.relative_humidity_2m,
+                        windSpeed: Math.round(data.current.wind_speed_10m),
+                        icon: getConditionIconName(data.current.weather_code),
                     });
                 }
                 setLoading(false);
             } catch (error) {
-                console.error("Failed to fetch weather:", error);
+                console.error("Failed to fetch weather from Open-Meteo:", error);
                 setLoading(false);
             }
         };
