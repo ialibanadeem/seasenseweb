@@ -244,6 +244,47 @@ export default function VesselAnalyticsDashboard() {
                         {/* Area 2: Side Panels (Alerts, Timeline, Heatmap) */}
                         <div className="col-span-4 flex flex-col gap-4 md:gap-8">
                             
+                            {/* Vessel Identity */}
+                            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+                                <h3 className="font-bold text-slate-900 mb-6 flex items-center gap-2"><Ship size={18} className="text-blue-500" /> Vessel Identity</h3>
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                                        <span className="text-[12px] font-bold text-slate-400 uppercase tracking-widest">Registration</span>
+                                        <span className="text-[14px] font-bold text-slate-700">{vessel.registrationNumber || '--'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                                        <span className="text-[12px] font-bold text-slate-400 uppercase tracking-widest">Owner</span>
+                                        <span className="text-[14px] font-bold text-slate-700">{vessel.ownerName || '--'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                                        <span className="text-[12px] font-bold text-slate-400 uppercase tracking-widest">Contact</span>
+                                        <span className="text-[14px] font-bold text-slate-700">{vessel.contactNumber || '--'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                                        <span className="text-[12px] font-bold text-slate-400 uppercase tracking-widest">Home Port</span>
+                                        <span className="text-[14px] font-bold text-slate-700">{vessel.homePort || '--'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                                        <span className="text-[12px] font-bold text-slate-400 uppercase tracking-widest">Region</span>
+                                        <span className="text-[14px] font-bold text-slate-700">{vessel.operatingRegion || '--'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                                        <span className="text-[12px] font-bold text-slate-400 uppercase tracking-widest">Device ID</span>
+                                        <span className="text-[14px] font-bold text-slate-700 font-mono">{vessel.deviceId || '--'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                                        <span className="text-[12px] font-bold text-slate-400 uppercase tracking-widest">SIM / ICCID</span>
+                                        <span className="text-[14px] font-bold text-slate-700 font-mono">{vessel.simNumber || '--'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center pt-2">
+                                        <span className="text-[12px] font-bold text-slate-400 uppercase tracking-widest">Device Link</span>
+                                        <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${vessel.deviceStatus === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                                            {vessel.deviceStatus || 'ACTIVE'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             {/* Alert Feed */}
                             <div className="bg-white border border-rose-100 rounded-3xl p-4 md:p-6 shadow-sm flex flex-col">
                                 <h3 className="font-bold text-rose-900 mb-6 flex items-center gap-2"><AlertTriangle size={18} className="text-rose-500" /> Active Vessel Alerts</h3>

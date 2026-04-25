@@ -5,6 +5,14 @@ export interface Vessel {
     mmsi: string;
     type: string;
     status: 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE';
+    registrationNumber?: string;
+    ownerName?: string;
+    contactNumber?: string;
+    homePort?: string;
+    operatingRegion?: string;
+    deviceId?: string;
+    simNumber?: string;
+    deviceStatus?: 'ACTIVE' | 'INACTIVE';
 }
 
 export interface LocationPoint {

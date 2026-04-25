@@ -55,7 +55,17 @@ model Vessel {
   activities ActivityTimeline[]
   alerts     Alert[]
   gpsLogs    GpsLog[]
-  trips      Trip[]
+  trips              Trip[]
+
+  // New Fields added
+  registrationNumber String?            @unique
+  ownerName          String?
+  contactNumber      String?
+  homePort           String?
+  operatingRegion    String?
+  deviceId           String?            @unique
+  simNumber          String?            @unique
+  deviceStatus       DeviceStatus       @default(ACTIVE)
 
   @@index([mmsi])
   @@index([imo])
@@ -216,4 +226,9 @@ enum AlertStatus {
   ACTIVE
   RESOLVED
   ACKNOWLEDGED
+}
+
+enum DeviceStatus {
+  ACTIVE
+  INACTIVE
 }

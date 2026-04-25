@@ -3,11 +3,27 @@
 import React from 'react';
 import Link from 'next/link';
 import { useVesselStore } from '@/store/useVesselStore';
-import { Ship, Activity, Navigation, Droplets, MapPin, Gauge } from 'lucide-react';
+import { Ship, Activity, Navigation, Droplets, MapPin, Gauge, Plus } from 'lucide-react';
+import AddVesselModal from '@/components/fleet/AddVesselModal';
 
 export default function FleetMasterPage() {
-    const { vessels, livePositions } = useVesselStore();
+    const { vessels, livePositions, setVessels } = useVesselStore();
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    
     const vesselList = Object.values(vessels);
+
+    const fetchVessels = async () => {
+        try {
+            const apiURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3005';
+            const res = await fetch(`${apiURL}/vessels`);
+            if (res.ok) {
+                const data = await res.json();
+                setVessels(data);
+            }
+        } catch (err) {
+            console.error("Failed to fetch updated vessels:", err);
+        }
+    };
 
     const getStatusColor = (status: string) => {
         const s = status?.toLowerCase();
@@ -21,9 +37,17 @@ export default function FleetMasterPage() {
     return (
         <div className="flex-1 p-8 bg-slate-50 overflow-y-auto">
             <div className="max-w-6xl mx-auto flex flex-col gap-8 pb-12">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Vessel List</h1>
-                    <p className="text-slate-500 mt-1 font-medium">Real-time overview of your entire fleet.</p>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-900">Vessel List</h1>
+                        <p className="text-slate-500 mt-1 font-medium">Real-time overview of your entire fleet.</p>
+                    </div>
+                    <button 
+                        onClick={() => setIsAddModalOpen(true)}
+                        className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold flex items-center gap-2 shadow-sm hover:shadow-md transition-all"
+                    >
+                        <Plus size={18} /> Add New Vessel
+                    </button>
                 </div>
 
                 <div className="grid grid-cols-1 xl:grid-cols-3 lg:grid-cols-2 gap-6">
@@ -103,6 +127,15 @@ export default function FleetMasterPage() {
                     })}
                 </div>
             </div>
+            
+            <AddVesselModal 
+                isOpen={isAddModalOpen} 
+                onClose={() => setIsAddModalOpen(false)} 
+                onSuccess={() => {
+                    setIsAddModalOpen(false);
+                    fetchVessels();
+                }} 
+            />
         </div>
     );
 }
