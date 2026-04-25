@@ -10,7 +10,7 @@ export class WeatherService {
 
     async getMarineIntelligence() {
         try {
-            const url = `https://marine-api.open-meteo.com/v1/marine?latitude=${this.lat}&longitude=${this.lon}&daily=wave_height_max,swell_wave_height_max,wind_wave_height_max&hourly=wave_height&models=best_match&current=wave_height,wave_direction,wind_wave_height,sea_surface_temperature,ocean_current_velocity,ocean_current_direction,sea_level_height_msl,wave_period,wind_wave_direction,swell_wave_height&past_days=0&forecast_days=7&wind_speed_unit=kn&minutely_15=ocean_current_velocity,ocean_current_direction,sea_level_height_msl&past_minutely_15=24&forecast_minutely_15=24&forecast_hours=6&cell_selection=nearest`;
+            const url = `https://marine-api.open-meteo.com/v1/marine?latitude=${this.lat}&longitude=${this.lon}&daily=wave_height_max,swell_wave_height_max,wind_wave_height_max&hourly=wave_height&models=best_match&current=wave_height,wave_direction,wind_wave_height,sea_surface_temperature,ocean_current_velocity,ocean_current_direction,sea_level_height_msl,wave_period,wind_wave_direction,swell_wave_height&past_days=0&forecast_days=7&wind_speed_unit=kn&temperature_unit=celsius&minutely_15=ocean_current_velocity,ocean_current_direction,sea_level_height_msl&past_minutely_15=24&forecast_minutely_15=24&forecast_hours=6&cell_selection=nearest`;
             const response = await axios.get(url);
             const data = response.data;
 
