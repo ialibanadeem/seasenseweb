@@ -5,21 +5,34 @@ import axios from 'axios';
 export class WeatherService {
     private readonly logger = new Logger(WeatherService.name);
     
-    private readonly lat = 24.75;
-    private readonly lon = 66.95;
+    private readonly seaLat = 24.75;
+    private readonly seaLon = 66.95;
+    private readonly cityLat = 24.86;
+    private readonly cityLon = 67.01;
 
     async getMarineIntelligence() {
         try {
-            const url = `https://marine-api.open-meteo.com/v1/marine?latitude=${this.lat}&longitude=${this.lon}&daily=wave_height_max,swell_wave_height_max,wind_wave_height_max&hourly=wave_height&models=best_match&current=wave_height,wave_direction,wind_wave_height,sea_surface_temperature,ocean_current_velocity,ocean_current_direction,sea_level_height_msl,wave_period,wind_wave_direction,swell_wave_height&past_days=0&forecast_days=7&wind_speed_unit=kn&temperature_unit=celsius&minutely_15=ocean_current_velocity,ocean_current_direction,sea_level_height_msl&past_minutely_15=24&forecast_minutely_15=24&forecast_hours=6&cell_selection=nearest`;
-            const response = await axios.get(url);
-            const data = response.data;
+            // Fetch Marine Data (Waves, Currents)
+            const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${this.seaLat}&longitude=${this.seaLon}&daily=wave_height_max,swell_wave_height_max,wind_wave_height_max&hourly=wave_height&models=best_match&current=wave_height,wave_direction,wind_wave_height,sea_surface_temperature,ocean_current_velocity,ocean_current_direction,sea_level_height_msl,wave_period,wind_wave_direction,swell_wave_height&wind_speed_unit=kn&temperature_unit=celsius&minutely_15=ocean_current_velocity,ocean_current_direction,sea_level_height_msl&past_minutely_15=24&forecast_minutely_15=24&forecast_hours=6&cell_selection=nearest`;
+            
+            // Fetch Land Weather Data (Air Temp, Humidity, Wind)
+            const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${this.cityLat}&longitude=${this.cityLon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m&wind_speed_unit=kmh&temperature_unit=celsius`;
 
-            const current = data.current;
-            const minutely = data.minutely_15;
+            const [marineRes, weatherRes] = await Promise.all([
+                axios.get(marineUrl),
+                axios.get(weatherUrl)
+            ]);
+
+            const mData = marineRes.data;
+            const wData = weatherRes.data;
+
+            const mCurrent = mData.current;
+            const wCurrent = wData.current;
+            const minutely = mData.minutely_15;
             
             // Calculate Risk Level
-            const waveHeight = current.wave_height || current.wind_wave_height || 0;
-            const currentSpeed = current.ocean_current_velocity || 0;
+            const waveHeight = mCurrent.wave_height || mCurrent.wind_wave_height || 0;
+            const currentSpeed = mCurrent.ocean_current_velocity || 0;
             
             let riskLevel = 'Safe';
             if (waveHeight > 2.0 || currentSpeed > 1.5) {
@@ -28,54 +41,60 @@ export class WeatherService {
                 riskLevel = 'Moderate';
             }
 
-            // Calculate Tide Trend (Rising/Falling)
+            // Calculate Tide Trend
             let tideTrend = 'Stable';
             const seaLevels = minutely.sea_level_height_msl;
             if (seaLevels && seaLevels.length > 24) {
-                // Compare current (index 24 is roughly 'now' if past_minutely_15=24) to +4 hours (index 24 + 16 = 40)
                 const currentLevel = seaLevels[24] || 0;
                 const futureLevel = seaLevels[40] || 0;
                 if (futureLevel > currentLevel + 0.1) tideTrend = 'Rising';
                 else if (futureLevel < currentLevel - 0.1) tideTrend = 'Falling';
             }
 
-            // Calculate Sea Condition Score (0-100)
+            // Calculate Sea Condition Score
             let score = 100 - (waveHeight * 25) - (currentSpeed * 15);
             score = Math.max(0, Math.min(100, Math.round(score)));
 
-            // Compute Safe Sailing Window (Next X hours)
+            // Compute Safe Sailing Window
             let safeHours = 0;
-            if (data.hourly && data.hourly.wave_height) {
-                for (let i = 0; i < data.hourly.wave_height.length; i++) {
-                    const hWave = data.hourly.wave_height[i];
+            if (mData.hourly && mData.hourly.wave_height) {
+                for (let i = 0; i < mData.hourly.wave_height.length; i++) {
+                    const hWave = mData.hourly.wave_height[i];
                     if (hWave && hWave < 1.5) {
                         safeHours++;
                     } else if (hWave >= 1.5) {
-                        break; // Window ends
+                        break;
                     }
                 }
             }
 
             return {
                 live: {
+                    // Marine
                     waveHeight,
-                    waveDirection: current.wave_direction || 0,
-                    windWaveHeight: current.wind_wave_height || 0,
-                    seaSurfaceTemp: current.sea_surface_temperature || 0,
-                    currentSpeed: current.ocean_current_velocity || 0,
-                    currentDirection: current.ocean_current_direction || 0,
-                    tideLevel: current.sea_level_height_msl || 0,
+                    waveDirection: mCurrent.wave_direction || 0,
+                    windWaveHeight: mCurrent.wind_wave_height || 0,
+                    seaSurfaceTemp: mCurrent.sea_surface_temperature || 0,
+                    currentSpeed: mCurrent.ocean_current_velocity || 0,
+                    currentDirection: mCurrent.ocean_current_direction || 0,
+                    tideLevel: mCurrent.sea_level_height_msl || 0,
                     tideTrend,
-                    riskLevel
+                    riskLevel,
+                    // Land Weather (matching user's screenshot expectations)
+                    airTemp: wCurrent.temperature_2m || 0,
+                    humidity: wCurrent.relative_humidity_2m || 0,
+                    windSpeed: wCurrent.wind_speed_10m || 0,
+                    windDirection: wCurrent.wind_direction_10m || 0,
+                    conditionCode: wCurrent.weather_code || 0
                 },
                 intelligence: {
                     seaConditionScore: score,
                     safeSailingWindowHours: safeHours
                 },
                 forecast: {
-                    hourly: data.hourly,
-                    daily: data.daily,
-                    minutely: data.minutely_15
+                    hourly: mData.hourly,
+                    daily: mData.daily,
+                    minutely: mData.minutely_15
                 }
             };
         } catch (error) {

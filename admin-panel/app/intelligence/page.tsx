@@ -94,6 +94,20 @@ export default function MarineIntelligencePage() {
                             {live.riskLevel === 'Dangerous' ? <AlertTriangle size={18} /> : <ShieldCheck size={18} />}
                             Risk Level: {live.riskLevel}
                         </div>
+                        <div className="px-4 py-2.5 rounded-xl border border-blue-100 bg-blue-50 text-blue-600 font-bold text-[14px] flex items-center gap-2 capitalize">
+                            <Thermometer size={18} />
+                            {(() => {
+                                const code = live.conditionCode;
+                                if (code === 0) return 'Sunny / Clear';
+                                if (code >= 1 && code <= 3) return 'Partly Cloudy';
+                                if (code >= 45 && code <= 48) return 'Foggy';
+                                if (code >= 51 && code <= 67) return 'Rainy';
+                                if (code >= 71 && code <= 77) return 'Snowy';
+                                if (code >= 80 && code <= 82) return 'Showers';
+                                if (code >= 95) return 'Thunderstorm';
+                                return 'Clear';
+                            })()}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -156,26 +170,37 @@ export default function MarineIntelligencePage() {
                         <p className="text-2xl font-black text-slate-900">{live.windWaveHeight.toFixed(2)}<span className="text-[12px] font-bold text-slate-400 ml-1">m</span></p>
                     </div>
                     <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4"><Navigation size={18} /></div>
+                        <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4"><Wind size={18} /></div>
+                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-between">
+                            Wind Speed
+                            <InfoTooltip text="Land-based wind speed measured in Karachi city center." />
+                        </p>
+                        <p className="text-2xl font-black text-slate-900">{live.windSpeed?.toFixed(0)}<span className="text-[12px] font-bold text-slate-400 ml-1">km/h</span></p>
+                    </div>
+                    <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="w-10 h-10 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center mb-4"><Navigation size={18} /></div>
                         <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-between">
                             Current Speed
-                            <InfoTooltip text="How fast the water itself is moving in a specific direction (measured in knots)." />
+                            <InfoTooltip text="How fast the water itself is moving (measured in knots)." />
                         </p>
                         <p className="text-2xl font-black text-slate-900">{live.currentSpeed.toFixed(2)}<span className="text-[12px] font-bold text-slate-400 ml-1">kn</span></p>
                     </div>
                     <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
                         <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center mb-4"><Thermometer size={18} /></div>
                         <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-between">
-                            Sea Temp
-                            <InfoTooltip text="The temperature of the water at the surface." />
+                            Air / Sea Temp
+                            <InfoTooltip text="Air temperature (Karachi) and Sea Surface temperature." />
                         </p>
-                        <p className="text-2xl font-black text-slate-900">{live.seaSurfaceTemp.toFixed(1)}<span className="text-[12px] font-bold text-slate-400 ml-1">°C</span></p>
+                        <div className="flex flex-col">
+                            <p className="text-2xl font-black text-slate-900">{live.airTemp?.toFixed(1)}<span className="text-[12px] font-bold text-slate-400 ml-1">°C</span></p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Sea: {live.seaSurfaceTemp.toFixed(1)}°C</p>
+                        </div>
                     </div>
                     <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
                         <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center mb-4"><Droplets size={18} /></div>
                         <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-between">
                             Tide Level
-                            <InfoTooltip text="The current height of the sea level compared to average levels, and whether it is going up or down." />
+                            <InfoTooltip text="The current height of the sea level compared to average levels." />
                         </p>
                         <div className="flex items-center gap-2">
                             <p className="text-2xl font-black text-slate-900">{live.tideLevel.toFixed(2)}<span className="text-[12px] font-bold text-slate-400 ml-1">m</span></p>
