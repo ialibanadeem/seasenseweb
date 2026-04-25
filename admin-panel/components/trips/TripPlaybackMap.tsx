@@ -50,7 +50,7 @@ export default function TripPlaybackMap({ tripId }: Props) {
             center: [67.0011, 24.8607],
             zoom: 11,
             preserveDrawingBuffer: true, // Critical for MediaRecorder Canvas export
-        });
+        } as any);
 
         map.current.on('load', () => {
             if (!map.current) return;
