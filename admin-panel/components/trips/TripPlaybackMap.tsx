@@ -136,7 +136,7 @@ export default function TripPlaybackMap({ tripId }: Props) {
                         // Fit Bounds
                         const bounds = new maptilersdk.LngLatBounds(coords[0], coords[0]);
                         coords.forEach((c: any) => bounds.extend(c));
-                        map.current.fitBounds(bounds, { padding: 80, animation: false });
+                        map.current.fitBounds(bounds, { padding: 80, animate: false });
 
                         // Set Marker to start
                         markerRef.current?.setLngLat(coords[0]);
