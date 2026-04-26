@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SeaSense AI - Fleet Intelligence Report</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0ea5e9;
+            --primary-dark: #0284c7;
+            --slate-950: #020617;
+            --slate-900: #0f172a;
+            --slate-800: #1e293b;
+            --slate-700: #334155;
+            --slate-600: #475569;
+            --slate-400: #94a3b8;
+            --slate-200: #e2e8f0;
+            --emerald: #10b981;
+            --rose: #f43f5e;
+            --amber: #f59e0b;
+        }
+
+        @page {
+            size: A4;
+            margin: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            color: var(--slate-900);
+            background: white;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 25mm;
+            margin: 0 auto;
+            box-sizing: border-box;
+            position: relative;
+            background: white;
+            page-break-after: always;
+        }
+
+        .cover-page {
+            background: var(--slate-950);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            text-align: center;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .cover-image {
+            width: 100%;
+            height: 60%;
+            object-fit: cover;
+            mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+        }
+
+        .cover-content {
+            padding: 40px;
+            z-index: 10;
+            margin-top: -100px;
+        }
+
+        .cover-title {
+            font-size: 56px;
+            font-weight: 900;
+            letter-spacing: -2px;
+            margin: 0;
+            text-transform: uppercase;
+            background: linear-gradient(to right, #fff, #0ea5e9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .cover-subtitle {
+            font-size: 24px;
+            font-weight: 400;
+            color: var(--slate-400);
+            margin-top: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .cover-footer {
+            margin-bottom: 60px;
+            font-size: 14px;
+            color: var(--slate-600);
+            letter-spacing: 1px;
+        }
+
+        .section-title {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--slate-950);
+            border-bottom: 4px solid var(--primary);
+            padding-bottom: 10px;
+            margin-top: 40px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-title span {
+            color: var(--primary);
+        }
+
+        h2 { font-size: 22px; font-weight: 700; color: var(--slate-800); margin-top: 30px; }
+        h3 { font-size: 18px; font-weight: 700; color: var(--slate-700); margin-top: 20px; }
+
+        p { margin-bottom: 15px; font-size: 15px; color: var(--slate-700); }
+
+        ul { margin-bottom: 20px; padding-left: 20px; }
+        li { margin-bottom: 8px; font-size: 15px; color: var(--slate-700); }
+
+        .logic-card {
+            background: var(--slate-200);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 6px solid var(--primary);
+        }
+
+        .logic-title {
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 12px;
+            color: var(--primary-dark);
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .code-block {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--slate-900);
+            color: #94e2d5;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 13px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .threshold-grid {
+            display: grid;
+            grid-template-cols: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .threshold-item {
+            padding: 15px;
+            border-radius: 16px;
+            text-align: center;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+
+        .danger { background: #fff1f2; color: #e11d48; border-color: #fecdd3; }
+        .moderate { background: #fffbeb; color: #d97706; border-color: #fef3c7; }
+        .safe { background: #ecfdf5; color: #059669; border-color: #d1fae5; }
+
+        .layman-box {
+            background: #f8fafc;
+            border: 1px solid var(--slate-200);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .layman-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--slate-900);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 25mm;
+            left: 25mm;
+            right: 25mm;
+            font-size: 12px;
+            color: var(--slate-400);
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid var(--slate-200);
+            padding-top: 10px;
+        }
+
+        @media print {
+            .page { box-shadow: none; margin: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- COVER PAGE -->
+    <div class="page cover-page">
+        <img src="C:/Users/DELL/.gemini/antigravity/brain/17a6c995-838e-4849-b9ce-876810df19e4/seasense_report_cover_1777222120510.png" alt="Cover" class="cover-image">
+        <div class="cover-content">
+            <h1 class="cover-title">SeaSense AI</h1>
+            <p class="cover-subtitle">Fleet Intelligence Report</p>
+        </div>
+        <div class="cover-footer">
+            SYSTEM VERSION 2.4.0 • PRODUCTION ECOSYSTEM DOCUMENTATION • 2026
+        </div>
+    </div>
+
+    <!-- PAGE 1: SYSTEM LOGIC -->
+    <div class="page">
+        <div class="section-title"><span>01</span> Navigation & Page Logic</div>
+        
+        <h3>Command Center (Dashboard Home)</h3>
+        <p>The primary mission-control interface designed for immediate situational awareness.</p>
+        
+        <div class="logic-card">
+            <span class="logic-title">Fleet Status Logic</span>
+            <ul>
+                <li><strong>Active (Moving):</strong> Speed > 2 knots AND signal received within 5 minutes.</li>
+                <li><strong>Idle:</strong> Speed ≤ 2 knots AND signal received within 5 minutes.</li>
+                <li><strong>Offline:</strong> No GPS signals received for over 5 minutes.</li>
+            </ul>
+        </div>
+
+        <h3>Fleet Master</h3>
+        <p>The central registry for all maritime assets, showing real-time snapshots of Speed, Fuel Level, Heading, and Engine Status.</p>
+
+        <div class="section-title"><span>02</span> Marine Intelligence</div>
+        <p>A predictive safety dashboard powered by real-time oceanographic data.</p>
+        
+        <h3>Risk Level Criteria</h3>
+        <div class="threshold-grid">
+            <div class="threshold-item danger">DANGEROUS<br><small>Waves > 2.0m</small></div>
+            <div class="threshold-item moderate">MODERATE<br><small>Waves > 1.0m</small></div>
+            <div class="threshold-item safe">SAFE<br><small>Standard</small></div>
+        </div>
+
+        <div class="logic-card">
+            <span class="logic-title">Mathematical Algorithms</span>
+            <p><strong>Condition Score:</strong> 100 - (WaveHeight × 25) - (CurrentSpeed × 15)</p>
+            <p><strong>Sailing Window:</strong> Scans 24-hour forecast for contiguous hours where waves < 1.5m.</p>
+        </div>
+
+        <div class="footer">
+            <span>SeaSense AI • Confidential</span>
+            <span>Page 1</span>
+        </div>
+    </div>
+
+    <!-- PAGE 2: ARCHITECTURE & NON-TECH -->
+    <div class="page">
+        <div class="section-title"><span>03</span> Production Architecture</div>
+        
+        <div class="logic-card" style="background: var(--slate-950); color: white; border: none;">
+            <span class="logic-title" style="color: var(--primary);">Infrastructure Mapping</span>
+            <ul>
+                <li><strong style="color: #fff;">Frontend:</strong> Vercel (Next.js 15)</li>
+                <li><strong style="color: #fff;">Backend:</strong> Render (NestJS & Express)</li>
+                <li><strong style="color: #fff;">Database:</strong> Render Managed PostgreSQL + PostGIS</li>
+                <li><strong style="color: #fff;">Real-time:</strong> Render Managed Redis</li>
+            </ul>
+        </div>
+
+        <div class="section-title"><span>04</span> Non-Technical Overview</div>
+        
+        <div class="layman-box">
+            <div class="layman-title">🌊 What is SeaSense AI?</div>
+            <p>SeaSense AI is like an <strong>"Air Traffic Control"</strong> system for boats. It allows fleet owners to see exactly where every vessel is, how it's behaving, and whether it's safe to be out on the water.</p>
+        </div>
+
+        <div class="layman-box">
+            <div class="layman-title">📡 Real-Time Updates</div>
+            <p>The system uses "WebSockets," which is like a <strong>permanent open phone call</strong> between the boat and your screen. Icons move the second the boat moves.</p>
+        </div>
+
+        <div class="layman-box">
+            <div class="layman-title">📏 Accurate Distance</div>
+            <p>Since the Earth is round, we use the "Haversine Formula" to measure travel distance perfectly, <strong>accounting for the curvature of the planet</strong>.</p>
+        </div>
+
+        <div class="footer">
+            <span>SeaSense AI • Confidential</span>
+            <span>Page 2</span>
+        </div>
+    </div>
+
+</body>
+</html>
