@@ -14,6 +14,47 @@ const InfoTooltip = ({ text }: { text: string }) => (
     </div>
 );
 
+const IntelligenceCard = ({ icon, label, value, unit, tooltip, color, extra, badge }: any) => {
+    const colorMap: any = {
+        blue: 'bg-blue-50 text-blue-600',
+        cyan: 'bg-cyan-50 text-cyan-600',
+        indigo: 'bg-indigo-50 text-indigo-600',
+        orange: 'bg-orange-50 text-orange-600',
+        sky: 'bg-sky-50 text-sky-600',
+        emerald: 'bg-emerald-50 text-emerald-600',
+    };
+
+    return (
+        <div className="bg-white rounded-[32px] p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 group">
+            <div className="flex items-start justify-between mb-6">
+                <div className={`w-12 h-12 rounded-2xl ${colorMap[color] || colorMap.blue} flex items-center justify-center transition-transform group-hover:scale-110 duration-300`}>
+                    {icon}
+                </div>
+                <InfoTooltip text={tooltip} />
+            </div>
+            
+            <div className="space-y-1">
+                <p className="text-[12px] font-bold text-slate-400 uppercase tracking-widest">{label}</p>
+                <div className="flex items-baseline gap-1">
+                    <p className="text-3xl font-black text-slate-900 tracking-tight">{value}</p>
+                    <span className="text-[14px] font-bold text-slate-400">{unit}</span>
+                </div>
+                
+                {(extra || badge) && (
+                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-50">
+                        {extra && <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{extra}</p>}
+                        {badge && (
+                            <span className="text-[10px] font-black px-2 py-1 bg-slate-100 text-slate-500 rounded-lg uppercase tracking-tighter">
+                                {badge}
+                            </span>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
 export default function MarineIntelligencePage() {
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<any>(null);
@@ -152,61 +193,57 @@ export default function MarineIntelligencePage() {
 
                 {/* Live Cards (Snapshot) */}
                 <h2 className="text-lg font-bold text-slate-900 mt-2">Live Ocean Conditions</h2>
-                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
-                    <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4"><Waves size={18} /></div>
-                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-between">
-                            Wave Height
-                            <InfoTooltip text="The average size of the largest ocean waves right now." />
-                        </p>
-                        <p className="text-2xl font-black text-slate-900">{live.waveHeight.toFixed(2)}<span className="text-[12px] font-bold text-slate-400 ml-1">m</span></p>
-                    </div>
-                    <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="w-10 h-10 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center mb-4"><Wind size={18} /></div>
-                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-between">
-                            Wind Wave
-                            <InfoTooltip text="The size of the waves caused directly by local winds blowing over the water." />
-                        </p>
-                        <p className="text-2xl font-black text-slate-900">{live.windWaveHeight.toFixed(2)}<span className="text-[12px] font-bold text-slate-400 ml-1">m</span></p>
-                    </div>
-                    <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4"><Wind size={18} /></div>
-                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-between">
-                            Wind Speed
-                            <InfoTooltip text="Land-based wind speed measured in Karachi city center." />
-                        </p>
-                        <p className="text-2xl font-black text-slate-900">{live.windSpeed?.toFixed(0)}<span className="text-[12px] font-bold text-slate-400 ml-1">km/h</span></p>
-                    </div>
-                    <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="w-10 h-10 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center mb-4"><Navigation size={18} /></div>
-                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-between">
-                            Current Speed
-                            <InfoTooltip text="How fast the water itself is moving (measured in knots)." />
-                        </p>
-                        <p className="text-2xl font-black text-slate-900">{live.currentSpeed.toFixed(2)}<span className="text-[12px] font-bold text-slate-400 ml-1">kn</span></p>
-                    </div>
-                    <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center mb-4"><Thermometer size={18} /></div>
-                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-between">
-                            Air / Sea Temp
-                            <InfoTooltip text="Air temperature (Karachi) and Sea Surface temperature." />
-                        </p>
-                        <div className="flex flex-col">
-                            <p className="text-2xl font-black text-slate-900">{live.airTemp?.toFixed(1)}<span className="text-[12px] font-bold text-slate-400 ml-1">°C</span></p>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Sea: {live.seaSurfaceTemp.toFixed(1)}°C</p>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center mb-4"><Droplets size={18} /></div>
-                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-between">
-                            Tide Level
-                            <InfoTooltip text="The current height of the sea level compared to average levels." />
-                        </p>
-                        <div className="flex items-center gap-2">
-                            <p className="text-2xl font-black text-slate-900">{live.tideLevel.toFixed(2)}<span className="text-[12px] font-bold text-slate-400 ml-1">m</span></p>
-                            <span className="text-[11px] font-bold px-2 py-1 bg-slate-100 text-slate-600 rounded-lg">{live.tideTrend}</span>
-                        </div>
-                    </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <IntelligenceCard 
+                        icon={<Waves size={20} />} 
+                        label="Wave Height" 
+                        value={live.waveHeight.toFixed(2)} 
+                        unit="m" 
+                        tooltip="The average size of the largest ocean waves right now."
+                        color="blue"
+                    />
+                    <IntelligenceCard 
+                        icon={<Wind size={20} />} 
+                        label="Wind Wave" 
+                        value={live.windWaveHeight.toFixed(2)} 
+                        unit="m" 
+                        tooltip="The size of the waves caused directly by local winds blowing over the water."
+                        color="cyan"
+                    />
+                    <IntelligenceCard 
+                        icon={<Wind size={20} />} 
+                        label="Wind Speed" 
+                        value={live.windSpeed?.toFixed(0)} 
+                        unit="km/h" 
+                        tooltip="Land-based wind speed measured in Karachi city center."
+                        color="indigo"
+                    />
+                    <IntelligenceCard 
+                        icon={<Navigation size={20} />} 
+                        label="Current Speed" 
+                        value={live.currentSpeed.toFixed(2)} 
+                        unit="kn" 
+                        tooltip="How fast the water itself is moving (measured in knots)."
+                        color="cyan"
+                    />
+                    <IntelligenceCard 
+                        icon={<Thermometer size={20} />} 
+                        label="Air / Sea Temp" 
+                        value={live.airTemp?.toFixed(1)} 
+                        unit="°C" 
+                        tooltip="Air temperature (Karachi) and Sea Surface temperature."
+                        color="orange"
+                        extra={`Sea: ${live.seaSurfaceTemp.toFixed(1)}°C`}
+                    />
+                    <IntelligenceCard 
+                        icon={<Droplets size={20} />} 
+                        label="Tide Level" 
+                        value={live.tideLevel.toFixed(2)} 
+                        unit="m" 
+                        tooltip="The current height of the sea level compared to average levels."
+                        color="sky"
+                        badge={live.tideTrend}
+                    />
                 </div>
 
                 {/* Forecast Charts */}
